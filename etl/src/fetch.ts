@@ -56,7 +56,19 @@ export async function fetchCsvExport(
     );
   }
   const html = await metaRes.text();
-  if (html.includes("accounts.google.com") || html.includes("ServiceLogin")) {
+  // Prefer final response URL host checks over substring search in HTML body.
+  let finalHost = "";
+  try {
+    finalHost = new URL(metaRes.url).hostname.toLowerCase();
+  } catch {
+    finalHost = "";
+  }
+  if (
+    finalHost === "accounts.google.com" ||
+    (finalHost.endsWith(".google.com") && finalHost.startsWith("accounts.")) ||
+    /id=["']gaia_loginform["']/i.test(html) ||
+    /action=["'][^"']*ServiceLogin/i.test(html)
+  ) {
     throw new Error(
       "Sheet requires login. Share it publicly or use --from=data/raw/<dir> / GOOGLE_SERVICE_ACCOUNT_JSON.",
     );

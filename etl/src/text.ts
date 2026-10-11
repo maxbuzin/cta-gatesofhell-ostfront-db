@@ -6,13 +6,27 @@ export function sanitizePlainText(input: unknown, maxLen = 2000): string {
   if (input == null) return "";
   let s = String(input);
   s = s.replace(/<[^>]*>/g, " ");
+  // Decode named/numeric entities once without producing re-parseable '&…;' sequences.
+  // Replace &amp; last so we never double-unescape (&amp;lt; stays harmless after one pass).
   s = s
     .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "&")
     .replace(/&lt;/gi, "<")
     .replace(/&gt;/gi, ">")
     .replace(/&quot;/gi, '"')
-    .replace(/&#39;/gi, "'");
+    .replace(/&#39;/gi, "'")
+    .replace(/&#x27;/gi, "'")
+    .replace(/&#(\d+);/g, (_, n) => {
+      const code = Number(n);
+      if (!Number.isFinite(code) || code < 32 && code !== 9 && code !== 10) {
+        return " ";
+      }
+      try {
+        return String.fromCodePoint(code);
+      } catch {
+        return " ";
+      }
+    })
+    .replace(/&amp;/gi, "&");
   s = s.replace(CONTROL, "");
   s = s.replace(/\s+/g, " ").trim();
   if (s.length > maxLen) s = s.slice(0, maxLen);
