@@ -1,0 +1,12 @@
+{
+  "slug": {
+    "Tanks:germany:Panzer IV H": "panzer-iv-h"
+  },
+  "unitType": {
+    "Tank Destroyers & SPG:germany:Hummel": "spg"
+  },
+  "rename": {
+    "Infantry:finland:Calvary Rifle Squad": "Cavalry Rifle Squad"
+  },
+  "skipRows": []
+}

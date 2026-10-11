@@ -1,21 +1,24 @@
 name: ETL
 
 on:
-  schedule:
-    - cron: "0 6 * * 1"
   workflow_dispatch:
     inputs:
       patch:
         description: "Game version code"
         required: true
         type: string
+      dry_run:
+        description: "Dry-run only (recommended)"
+        required: true
+        type: boolean
+        default: true
 
 permissions:
   contents: read
 
 jobs:
   etl:
-    name: Run ETL (stub)
+    name: ETL notice (manual only)
     runs-on: ubuntu-latest
     environment: production-data
     steps:
@@ -24,12 +27,14 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Stub notice
+      - name: Manual ETL reminder
         env:
           PATCH: ${{ inputs.patch }}
+          DRY_RUN: ${{ inputs.dry_run }}
         run: |
-          echo "ETL pipeline is not implemented in v1."
-          echo "When ready, use DATABASE_URL_ETL from this environment only."
-          if [ -n "${PATCH}" ]; then
-            echo "Requested patch=${PATCH}"
-          fi
+          echo "ETL is not run automatically in CI."
+          echo "On a trusted machine with DATABASE_URL_ETL (goh_etl):"
+          echo "  pnpm etl --dry-run --patch ${PATCH:-current} --from data/raw/<dir>"
+          echo "  pnpm etl --patch ${PATCH:-current} --from data/raw/<dir>"
+          echo "dry_run=${DRY_RUN}"
+          echo "Secrets live in GitHub Environment production-data only."

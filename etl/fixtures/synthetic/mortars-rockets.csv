@@ -1,0 +1,2 @@
+Unit,Faction,Type,Main Specialty,Helmet (CP – deploy points),Shield (Cost – resources),Reload (s),Calibre (mm),Max range (m),Min range (m),Notes (Specialty = derived from wiki stats by rule, not an official game label),Ammo types,Lateral dispersion @max (m),Volley size,Crew
+8cm sGrW 34,Germany,Mortar,Support,9,110,8,81,2400,60,,HE,,,3

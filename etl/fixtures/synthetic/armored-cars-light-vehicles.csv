@@ -1,0 +1,7 @@
+Unit,Faction,Main Specialty,Helmet (CP – deploy points),Shield (Cost – resources),Turret armor max (mm),Hull armor max (mm),Speed (km/h),Reload (s),Pen AP point-blank (mm),Pen APCR/HVAP point-blank (mm),HEAT pen (mm),MG pen closest (mm),Calibre (mm),Range (m),Range AP (m),Range HE (m),Max field of view (m),Notes (Specialty = derived from wiki stats by rule, not an official game label),Pen AP @100m (mm),Rate of fire (RPM),Extra armor max (mm),Main gun,Ammo types,Crew,Max occupants
+GAZ-67b Armed Transport,USSR,Transport,,,,,1.5,40,,,,,,,,,,80,,,,,DP-27,,2,4
+GAZ-67b Armed Transport,USSR,Transport,,,,,1.5,40,,,,,,,,,,80,,,,,DP-27,,2,4
+Universal Mk.I,Commonwealth,Transport,,,,,14.5,40,,,,,,,,,,80,,,,,BREN Mk.II,,3,4
+Universal Mk.I,Commonwealth,Transport,,,,,14.5,40,,,,,,,,,,80,,,,,BREN Mk.II,,4,4
+Willys MB (MG),USA,Recon / Spotting,,,,,6.4,60,,,,,,,,,,90,,,,,Browning .30,,2,3
+Willys MB (MG),USA,Recon / Spotting,,,,,6.4,60,,,,,,,,,,90,,,,,Browning .50 Cal M2HB,,2,3

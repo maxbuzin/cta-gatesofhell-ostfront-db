@@ -1,0 +1,2 @@
+Unit,Faction,Type,Main Specialty,Helmet (CP – deploy points),Shield (Cost – resources),Turret armor max (mm),Hull armor max (mm),Speed (km/h),Reload (s),Pen AP point-blank (mm),Pen APCR/HVAP point-blank (mm),MG pen closest (mm),Calibre (mm),Range (m),Range AP (m),Notes (Specialty = derived from wiki stats by rule, not an official game label),Main gun,Ammo types,Pen AP @100m (mm),Rate of fire (RPM),Crew
+Flak 38,Germany,Gun,Anti-Air,,,,,,,40,,,20,2000,,,,2cm Flak 38,HE/AP,,120,4

@@ -45,6 +45,10 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   poweredByHeader: false,
   productionBrowserSourceMaps: false,
+  // ETL is a standalone CLI under etl/; never bundle it into the app.
+  outputFileTracingExcludes: {
+    "*": ["./etl/**/*", "./data/raw/**/*", "./data/reports/**/*"],
+  },
   experimental: {
     sri: {
       algorithm: "sha256",

@@ -1,0 +1,23 @@
+{
+  "unitName": {
+    "Calvary Rifle Squad": "Cavalry Rifle Squad",
+    "Calvary Recon Sapper Squad": "Cavalry Recon Sapper Squad",
+    "GroBdeutschland Rifle Squad": "Großdeutschland Rifle Squad"
+  },
+  "weaponName": {
+    "Bofor": "Bofors",
+    "Kwk": "KwK",
+    "kWK": "KwK",
+    "BREN": "Bren"
+  },
+  "weaponNormalize": [
+    { "pattern": "\\s{2,}", "replace": " " },
+    { "pattern": "\\bKwk\\b", "replace": "KwK" },
+    { "pattern": "\\bkWK\\b", "replace": "KwK" },
+    { "pattern": "\\bBREN\\b", "replace": "Bren" },
+    { "pattern": "\\bBofor\\b", "replace": "Bofors" },
+    { "pattern": "(\\d)\\s*cm\\b", "replace": "$1cm" },
+    { "pattern": "2 pounder", "replace": "2-pounder" },
+    { "pattern": "\\.50 [Cc]al\\b", "replace": ".50 cal" }
+  ]
+}

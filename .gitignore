@@ -42,8 +42,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# etl raw cache
+# etl raw cache + reports (never commit sheet CSVs / run output)
 /data/raw/
+/data/reports/
 
 # OS / editor
 .idea/

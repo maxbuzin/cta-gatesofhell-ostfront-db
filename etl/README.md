@@ -1,13 +1,32 @@
-# ETL (out of scope for v1 site PR)
+# ETL — Google Sheet → Neon
 
-This folder is a stub for the future import pipeline.
+Import pipeline for Ostfront DB. **Not part of the Next.js app bundle** — never import `etl/**` from `src/`.
 
-The website is read-only. Data lands in Neon via scripts that will live here:
+## Pipeline
 
-1. Fetch sources (Google Sheet CSV, Fandom wiki API, overrides)
-2. Validate with Zod
-3. Upsert into Postgres using the `goh_etl` role
-4. Build `public/search-index.json`
-5. `POST /api/revalidate` with Bearer `REVALIDATE_SECRET`
+`fetch → parse → zod validate → normalize → merge → upsert → report`
 
-Do not put `DATABASE_URL_ETL` in Vercel. Keep it in GitHub Actions environment `production-data` only.
+## Commands
+
+```bash
+# Transform only (no DB writes); writes data/reports/etl-<patch>.md
+pnpm etl --dry-run --from data/raw/<dir>
+
+# Write (one transaction; role goh_etl only)
+pnpm etl --patch current --from data/raw/<dir>
+```
+
+`--patch` defaults to `current`. Optional fetch modes:
+
+1. `--from data/raw/<dir>` — local CSV exports (preferred while licensing is unsettled)
+2. Public CSV export URLs (sheet shared “anyone with the link”)
+3. `GOOGLE_SERVICE_ACCOUNT_JSON` — read-only Sheets API (GitHub Environment `production-data` only)
+
+## Security
+
+- Connect with `DATABASE_URL_ETL` (`goh_etl` only). Owner / `goh_app_ro` refused.
+- No credentials in the repo. Raw CSVs stay in gitignored `data/raw/`.
+- Sheet text is untrusted: sanitized plain text, Zod, length caps, slug regex.
+- CI runs parser + Zod on `etl/fixtures/synthetic` only — never a live sheet import.
+
+See `docs/data-import.md` for contributor overrides and full workflow.

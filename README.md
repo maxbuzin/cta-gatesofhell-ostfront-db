@@ -25,16 +25,21 @@ Optional env (see `.env.example`):
 
 - `DATABASE_URL` – Neon **pooler** URL for `goh_app_ro` (required in production)
 - `DATABASE_URL_OWNER` – owner / unpooled URL for `drizzle-kit` only (never on Vercel)
+- `DATABASE_URL_ETL` – `goh_etl` URL for `pnpm etl` only (never on Vercel)
+- `GOOGLE_SERVICE_ACCOUNT_JSON` – optional read-only Sheets access for ETL
 - `REVALIDATE_SECRET` – Bearer token for `POST /api/revalidate` (≥ 32 bytes)
-- `NEXT_PUBLIC_SITE_URL` – canonical site URL
+- `NEXT_PUBLIC_SITE_URL` / `SITE_URL` – canonical site URL
 
-Neon apply order and Max toggles: `docs/max-settings-checklist.md`.
+Neon apply order and Max toggles: `docs/max-settings-checklist.md`.  
+Sheet import: `docs/data-import.md`.
 
 ## Scripts
 
 - `pnpm lint` – ESLint
 - `pnpm typecheck` – `tsc --noEmit`
 - `pnpm build` – production build
+- `pnpm test` – unit tests (includes synthetic ETL fixture)
+- `pnpm etl --dry-run --from …` – sheet import dry-run (no DB writes)
 - `pnpm db:generate` – Drizzle migrations from schema (`DATABASE_URL_OWNER` required)
 
 ## Licenses

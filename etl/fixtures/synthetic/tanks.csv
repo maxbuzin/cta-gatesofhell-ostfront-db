@@ -1,0 +1,4 @@
+Unit,Speed (km/h),Reload (s),Turret armor max (mm),Hull armor max (mm),Pen AP point-blank (mm),Pen APCR/HVAP point-blank (mm),HEAT pen (mm),Calibre (mm),Range AP (m),Range HE (m),Faction,Class,Main Specialty,Helmet (CP – deploy points),Shield (Cost – resources),Max field of view (m),Notes (Specialty = derived from wiki stats by rule, not an official game label),Pen AP @100m (mm),Extra armor max (mm),Main gun,Ammo types,Crew,Max occupants
+Churchill Mk.III,24,6,89,101,84,,,57,1000,1000,Commonwealth,Infantry tank,Defense / Hold Line,,,80,,80,,75mm Mk V,AP/HE,5,0
+Churchill Mk.III,24,6,89,101,84,,,57,1000,1000,Commonwealth,Infantry tank,Defense / Hold Line,,,80,,80,,75mm Mk V,AP/HE,5,0
+Panzer IV H,40,4,50,80,99,126,,75,1500,1500,Germany,Medium,Anti-Tank,,,90,,90,,7.5cm Kwk 40 L/48,AP/APCR/HE,5,0

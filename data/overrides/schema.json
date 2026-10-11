@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ostfront-db.local/overrides.schema.json",
+  "title": "Ostfront DB ETL overrides",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "slug": {
+      "type": "object",
+      "description": "Force stable slug. Key: tab:faction-slug:Unit Name",
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9-]{0,79}$"
+      }
+    },
+    "unitType": {
+      "type": "object",
+      "description": "Force unit_types.code. Key: tab:faction-slug:Unit Name",
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9_]{0,63}$"
+      }
+    },
+    "rename": {
+      "type": "object",
+      "description": "Rename unit after sheet normalize. Key: tab:faction-slug:Unit Name",
+      "additionalProperties": {
+        "type": "string",
+        "maxLength": 200
+      }
+    },
+    "skipRows": {
+      "type": "array",
+      "description": "Drop specific sheet rows (1-based including header row numbering used by ETL).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["tab", "row"],
+        "properties": {
+          "tab": { "type": "string" },
+          "row": { "type": "integer", "minimum": 2 }
+        }
+      }
+    }
+  }
+}

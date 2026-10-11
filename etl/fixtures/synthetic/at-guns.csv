@@ -1,0 +1,2 @@
+Unit,Faction,Main Specialty,Helmet (CP – deploy points),Shield (Cost – resources),Reload (s),Pen AP point-blank (mm),Pen APCR/HVAP point-blank (mm),HEAT pen (mm),Calibre (mm),Range (m),Range AP (m),Range HE (m),Notes (Specialty = derived from wiki stats by rule, not an official game label),Ammo types,Pen AP @100m (mm),Crew
+Pak 40,Germany,Anti-Tank,, ,5,120,150,,75,1500,1500,1500,,AP/HE,110,5
