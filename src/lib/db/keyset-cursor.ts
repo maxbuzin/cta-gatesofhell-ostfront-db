@@ -22,18 +22,29 @@ export type CursorPayload = {
   k: CursorSortKey;
 };
 
-const cursorSchema = z.object({
-  id: z.number().int().finite(),
-  v: z.union([z.string(), z.number().finite(), z.null()]),
-  k: z.enum(CURSOR_SORT_KEYS),
-});
+function isNameSort(k: CursorSortKey): boolean {
+  return k.startsWith("name_");
+}
+
+/** Zod schema for a cursor under a specific sort key (value type matches column). */
+export function cursorSchemaFor(expectedSort: CursorSortKey) {
+  const valueSchema = isNameSort(expectedSort)
+    ? z.string() // units.name is text NOT NULL
+    : z.union([z.number().finite(), z.null()]); // numeric stats may be NULL
+  return z.object({
+    id: z.number().int().finite(),
+    v: valueSchema,
+    k: z.literal(expectedSort),
+  });
+}
 
 export function encodeCursor(payload: CursorPayload): string {
   return Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
 }
 
 /**
- * Decode and validate a keyset cursor. Invalid / mismatched sort → null (page 1).
+ * Decode and validate a keyset cursor. Invalid / type-mismatched → null (page 1).
+ * Never forwards a crafted text value into a numeric keyset predicate.
  */
 export function decodeCursor(
   raw: string | null | undefined,
@@ -44,14 +55,9 @@ export function decodeCursor(
     const parsed = JSON.parse(
       Buffer.from(raw, "base64url").toString("utf8"),
     ) as unknown;
-    const result = cursorSchema.safeParse(parsed);
+    const result = cursorSchemaFor(expectedSort).safeParse(parsed);
     if (!result.success) return null;
-    if (result.data.k !== expectedSort) return null;
-    // Name sorts must carry a string value (column is NOT NULL).
-    if (result.data.k.startsWith("name_") && typeof result.data.v !== "string") {
-      return null;
-    }
-    return result.data;
+    return result.data as CursorPayload;
   } catch {
     return null;
   }
@@ -134,6 +140,7 @@ export function rowAfterCursor(
   if (value === cursor.v) {
     return pred.idOp === ">" ? id > cursor.id : id < cursor.id;
   }
-  if (pred.valueOp === ">") return (value as number | string) > (cursor.v as number | string);
+  if (pred.valueOp === ">")
+    return (value as number | string) > (cursor.v as number | string);
   return (value as number | string) < (cursor.v as number | string);
 }

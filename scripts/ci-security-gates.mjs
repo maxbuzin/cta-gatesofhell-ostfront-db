@@ -143,18 +143,24 @@ const LIFECYCLE_SCRIPTS = new Set([
   "postdev",
 ]);
 
-/** Owner migrate must never run from CI/Vercel/lifecycle scripts. */
+/**
+ * Owner migrate must never run from CI/Vercel/lifecycle scripts.
+ * Case-insensitive; catches spacing/quoting variants of db:migrate,
+ * drizzle-kit migrate/push, and DATABASE_URL_OWNER.
+ */
+const OWNER_MIGRATE_RE =
+  /db\s*:\s*migrate|drizzle[\s_-]*kit[\s"'`]*[\s]+(?:migrate|push)|["'`]drizzle[\s_-]*kit["'`][\s]+(?:migrate|push)|DATABASE_URL_OWNER/i;
+
+function hasOwnerMigrateReference(text) {
+  return OWNER_MIGRATE_RE.test(String(text));
+}
+
 function scanMigrateOwnerGuard() {
   const pkg = JSON.parse(readFileSync("package.json", "utf8"));
   const scripts = pkg.scripts || {};
   for (const [name, body] of Object.entries(scripts)) {
     if (!LIFECYCLE_SCRIPTS.has(name)) continue;
-    const text = String(body);
-    if (
-      /\bdb:migrate\b/.test(text) ||
-      /drizzle-kit\s+migrate/.test(text) ||
-      /DATABASE_URL_OWNER/.test(text)
-    ) {
+    if (hasOwnerMigrateReference(body)) {
       fail(
         `Forbidden owner-migrate reference in lifecycle script "${name}" (Max machine only)`,
       );
@@ -163,11 +169,7 @@ function scanMigrateOwnerGuard() {
 
   if (existsSync("vercel.json")) {
     const vercel = readFileSync("vercel.json", "utf8");
-    if (
-      /\bdb:migrate\b/.test(vercel) ||
-      /drizzle-kit\s+migrate/.test(vercel) ||
-      /DATABASE_URL_OWNER/.test(vercel)
-    ) {
+    if (hasOwnerMigrateReference(vercel)) {
       fail(
         "Forbidden owner-migrate / DATABASE_URL_OWNER reference in vercel.json",
       );
@@ -178,11 +180,7 @@ function scanMigrateOwnerGuard() {
     for (const f of walk(".github/workflows")) {
       if (!/\.(yml|yaml)$/.test(f)) continue;
       const content = readFileSync(f, "utf8");
-      if (
-        /\bdb:migrate\b/.test(content) ||
-        /drizzle-kit\s+migrate/.test(content) ||
-        /DATABASE_URL_OWNER/.test(content)
-      ) {
+      if (hasOwnerMigrateReference(content)) {
         fail(
           `Forbidden owner-migrate / DATABASE_URL_OWNER reference in ${f}`,
         );
