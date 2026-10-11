@@ -46,7 +46,9 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({
   children,
-}: LayoutProps<"/">) {
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   const [searchIndex, gameVersion] = await Promise.all([
     getSearchIndex(),
     getCurrentGameVersion(),
