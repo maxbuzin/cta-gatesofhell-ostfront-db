@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/units/empty-state";
 import { ColorLegend } from "@/components/units/color-legend";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getUnitsBySlugs } from "@/lib/db/queries/units";
+import { safeCssColor } from "@/lib/safe-css-color";
 
 export const metadata: Metadata = {
   title: "Compare",
@@ -66,7 +67,9 @@ async function CompareContent({
   const series = units.map((u, i) => ({
     key: `u${i}`,
     label: u!.name,
-    color: ["#c0443a", "#d4a43a", "#3e6fa8", "#7a8b5c"][i % 4],
+    color: safeCssColor(
+      ["#c0443a", "#d4a43a", "#3e6fa8", "#7a8b5c"][i % 4],
+    ),
   }));
 
   const rangeSet = new Set<number>();
