@@ -46,6 +46,12 @@ export async function POST(req: Request) {
     const token = auth.slice("Bearer ".length);
     if (!safeEqualToken(token, secret)) return unauthorized();
 
+    const contentLength = req.headers.get("content-length");
+    if (contentLength !== null) {
+      const n = Number(contentLength);
+      if (!Number.isFinite(n) || n < 0 || n > 16_384) return unauthorized();
+    }
+
     const raw = await req.text();
     if (raw.length > 16_384) return unauthorized();
 

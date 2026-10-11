@@ -134,7 +134,7 @@ export const factions = pgTable(
     weaknesses: text(),
   },
   (t) => [
-    check("factions_slug_format", sql`${t.slug} ~ '^[a-z0-9-]{1,80}$'`),
+    check("factions_slug_format", sql`${t.slug} ~ '^[a-z0-9][a-z0-9-]{0,79}$'`),
     check(
       "factions_color_hex",
       sql`${t.color} IS NULL OR ${t.color} ~ '^#[0-9A-Fa-f]{6}$'`,
@@ -192,7 +192,7 @@ export const units = pgTable(
       "gin",
       sql`${t.searchName} gin_trgm_ops`,
     ),
-    check("units_slug_format", sql`${t.slug} ~ '^[a-z0-9-]{1,80}$'`),
+    check("units_slug_format", sql`${t.slug} ~ '^[a-z0-9][a-z0-9-]{0,79}$'`),
   ],
 );
 
@@ -338,7 +338,7 @@ export const weapons = pgTable(
     accuracyNote: text("accuracy_note"),
     extra: jsonb(),
   },
-  (t) => [check("weapons_slug_format", sql`${t.slug} ~ '^[a-z0-9-]{1,80}$'`)],
+  (t) => [check("weapons_slug_format", sql`${t.slug} ~ '^[a-z0-9][a-z0-9-]{0,79}$'`)],
 );
 
 export const unitWeapons = pgTable(
@@ -386,7 +386,7 @@ export const ammoTypes = pgTable(
     }),
     extra: jsonb(),
   },
-  (t) => [check("ammo_types_slug_format", sql`${t.slug} ~ '^[a-z0-9-]{1,80}$'`)],
+  (t) => [check("ammo_types_slug_format", sql`${t.slug} ~ '^[a-z0-9][a-z0-9-]{0,79}$'`)],
 );
 
 export const weaponAmmo = pgTable(
@@ -445,7 +445,7 @@ export const specialties = pgTable(
     descriptionPt: text("description_pt"),
     icon: text(),
   },
-  (t) => [check("specialties_slug_format", sql`${t.slug} ~ '^[a-z0-9-]{1,80}$'`)],
+  (t) => [check("specialties_slug_format", sql`${t.slug} ~ '^[a-z0-9][a-z0-9-]{0,79}$'`)],
 );
 
 export const unitSpecialties = pgTable(
@@ -489,7 +489,7 @@ export const researchNodes = pgTable(
       t.gameVersionId,
       t.slug,
     ),
-    check("research_nodes_slug_format", sql`${t.slug} ~ '^[a-z0-9-]{1,80}$'`),
+    check("research_nodes_slug_format", sql`${t.slug} ~ '^[a-z0-9][a-z0-9-]{0,79}$'`),
   ],
 );
 

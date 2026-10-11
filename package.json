@@ -13,7 +13,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "node -e \"if(!process.env.DATABASE_URL_OWNER){console.error('DATABASE_URL_OWNER required');process.exit(1)}\" && drizzle-kit studio"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0",

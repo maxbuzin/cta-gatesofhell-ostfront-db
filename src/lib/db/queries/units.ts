@@ -295,8 +295,8 @@ export async function listUnits(filters: UnitListFilters) {
     const totalWhere = await buildListWhere(db, filters, versionId, null);
     const orderBy =
       sort.dir === "asc"
-        ? [asc(sort.col), asc(units.id)]
-        : [desc(sort.col), desc(units.id)];
+        ? [sql`${sort.col} ASC NULLS LAST`, asc(units.id)]
+        : [sql`${sort.col} DESC NULLS LAST`, desc(units.id)];
 
     const statsJoin =
       versionId === null
@@ -729,10 +729,32 @@ export async function getUnitBySlug(slug: string) {
 }
 
 export async function getUnitsBySlugs(slugs: string[]) {
-  const unique = [...new Set(slugs)].slice(0, 4);
+  "use cache";
+  cacheLife("max");
+  cacheTag("units");
+  const unique = [
+    ...new Set(
+      slugs.filter((s) => /^[a-z0-9][a-z0-9-]{0,79}$/.test(s)),
+    ),
+  ].slice(0, 4);
   if (unique.length === 0) return [];
-  const results = await Promise.all(unique.map((s) => getUnitBySlug(s)));
-  return results.filter(Boolean);
+  const db = getDb();
+  if (!db) return [];
+  try {
+    const found = await db
+      .select({ slug: units.slug })
+      .from(units)
+      .where(inArray(units.slug, unique));
+    const order = new Map(unique.map((s, i) => [s, i]));
+    const ordered = found
+      .map((r) => r.slug)
+      .sort((a, b) => (order.get(a) ?? 99) - (order.get(b) ?? 99));
+    const results = await Promise.all(ordered.map((s) => getUnitBySlug(s)));
+    return results.filter(Boolean);
+  } catch {
+    console.error("Failed to load units by slugs");
+    return [];
+  }
 }
 
 export async function getSearchIndex() {

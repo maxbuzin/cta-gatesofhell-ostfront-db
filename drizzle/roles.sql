@@ -6,11 +6,22 @@
 -- Do NOT grant CREATE to goh_etl. Owner runs migrations only.
 
 -- ---------------------------------------------------------------------------
--- Harden PUBLIC (no CREATE / TEMP)
+-- Harden PUBLIC
 -- ---------------------------------------------------------------------------
 REVOKE CREATE ON SCHEMA public FROM PUBLIC;
-REVOKE CREATE ON DATABASE CURRENT_DATABASE FROM PUBLIC;
-REVOKE TEMP ON DATABASE CURRENT_DATABASE FROM PUBLIC;
+
+DO $$
+BEGIN
+  EXECUTE format(
+    'REVOKE ALL ON DATABASE %I FROM PUBLIC',
+    current_database()
+  );
+  EXECUTE format(
+    'REVOKE TEMP ON DATABASE %I FROM PUBLIC',
+    current_database()
+  );
+END
+$$;
 
 -- ---------------------------------------------------------------------------
 -- ETL writer (SELECT/INSERT/UPDATE/DELETE on app tables; no CREATE)
@@ -24,7 +35,18 @@ END
 $$;
 
 ALTER ROLE goh_etl CONNECTION LIMIT 10;
-ALTER ROLE goh_etl SET statement_timeout = '30s';
+ALTER ROLE goh_etl SET statement_timeout = '60s';
+ALTER ROLE goh_etl SET search_path = public;
+ALTER ROLE goh_etl SET lock_timeout = '1s';
+
+DO $$
+BEGIN
+  EXECUTE format(
+    'GRANT CONNECT ON DATABASE %I TO goh_etl',
+    current_database()
+  );
+END
+$$;
 
 GRANT USAGE ON SCHEMA public TO goh_etl;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO goh_etl;
@@ -51,6 +73,17 @@ ALTER ROLE goh_app_ro CONNECTION LIMIT 20;
 ALTER ROLE goh_app_ro SET default_transaction_read_only = on;
 ALTER ROLE goh_app_ro SET statement_timeout = '3s';
 ALTER ROLE goh_app_ro SET idle_in_transaction_session_timeout = '10s';
+ALTER ROLE goh_app_ro SET search_path = public;
+ALTER ROLE goh_app_ro SET lock_timeout = '1s';
+
+DO $$
+BEGIN
+  EXECUTE format(
+    'GRANT CONNECT ON DATABASE %I TO goh_app_ro',
+    current_database()
+  );
+END
+$$;
 
 GRANT USAGE ON SCHEMA public TO goh_app_ro;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO goh_app_ro;
@@ -67,24 +100,33 @@ BEGIN
 END
 $$;
 
+-- Assert app roles are not neon_superuser members
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'neon_superuser') THEN
+    IF pg_has_role('goh_etl', 'neon_superuser', 'member') THEN
+      RAISE EXCEPTION 'goh_etl must not be a member of neon_superuser';
+    END IF;
+    IF pg_has_role('goh_app_ro', 'neon_superuser', 'member') THEN
+      RAISE EXCEPTION 'goh_app_ro must not be a member of neon_superuser';
+    END IF;
+  END IF;
+END
+$$;
+
 -- ---------------------------------------------------------------------------
--- Verify (run after \password; expect no neon_superuser membership)
+-- Verify (run after \password)
 -- ---------------------------------------------------------------------------
 -- SELECT rolname, rolsuper, rolcanlogin, rolconnlimit
 -- FROM pg_roles WHERE rolname IN ('goh_etl', 'goh_app_ro');
 --
--- SELECT r.rolname AS member, m.rolname AS role
--- FROM pg_auth_members am
--- JOIN pg_roles r ON r.oid = am.member
--- JOIN pg_roles m ON m.oid = am.roleid
--- WHERE r.rolname IN ('goh_etl', 'goh_app_ro');
--- -- Expect zero rows mentioning neon_superuser.
---
--- SELECT has_schema_privilege('goh_etl', 'public', 'CREATE') AS etl_can_create;  -- false
--- SELECT has_database_privilege('PUBLIC', current_database(), 'CREATE') AS public_db_create; -- false
--- SELECT has_database_privilege('PUBLIC', current_database(), 'TEMP') AS public_temp; -- false
+-- SELECT pg_has_role('goh_etl', 'neon_superuser', 'member');   -- false
+-- SELECT pg_has_role('goh_app_ro', 'neon_superuser', 'member'); -- false
+-- SELECT has_schema_privilege('goh_etl', 'public', 'CREATE');  -- false
+-- SELECT has_database_privilege('PUBLIC', current_database(), 'CONNECT'); -- typically false after REVOKE ALL
 --
 -- SET ROLE goh_app_ro;
--- SELECT current_user;  -- goh_app_ro
+-- SELECT current_user;
 -- SELECT * FROM units LIMIT 1;  -- ok
+-- INSERT INTO factions (slug, name_en) VALUES ('x','x');  -- must fail
 -- RESET ROLE;

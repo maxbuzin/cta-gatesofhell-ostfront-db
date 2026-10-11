@@ -13,14 +13,15 @@ Repo-side security is in CI and code. These items need your Neon / Vercel / GitH
 
 Connect as `neondb_owner` (unpooled) on a **test** branch before production.
 
-1. Apply `drizzle/0000_odd_mercury.sql`
-2. Apply `drizzle/0001_search_extensions.sql` (pg_trgm, unaccent, trigram indexes)
-3. Apply `drizzle/0002_slug_checks.sql` (slug/color CHECKs, `primary_image_id` FK)
-4. Apply `drizzle/roles.sql` (creates `goh_etl` / `goh_app_ro` **without** passwords)
+1. Apply `drizzle/0000_odd_mercury.sql` (owner, unpooled)
+2. Apply `drizzle/0001_search_extensions.sql` (search / trigram)
+3. Apply `drizzle/0002_slug_checks.sql` (slug/color CHECKs, FKs)
+4. Apply `drizzle/roles.sql` (roles **without** passwords)
 5. `\password goh_etl` then `\password goh_app_ro`
-6. Run the verify SQL block at the bottom of `drizzle/roles.sql`
-7. Confirm neither role is a member of `neon_superuser`
-8. Cap Neon CU; enable usage/billing alerts
+6. Verify SQL at bottom of `roles.sql` (`pg_has_role(...,'neon_superuser')` false; `SET ROLE goh_app_ro`; INSERT must fail)
+7. Cap Neon CU; enable usage/billing alerts
+
+Vercel: only pooled `goh_app_ro` `DATABASE_URL`. Never put owner URL or `DATABASE_URL_ETL` on Vercel. ETL URL only in GitHub env `production-data`.
 
 ## Vercel
 

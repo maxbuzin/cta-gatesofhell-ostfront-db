@@ -6,6 +6,7 @@ import { PenetrationChart } from "@/components/units/penetration-chart";
 import { EmptyState } from "@/components/units/empty-state";
 import { ColorLegend } from "@/components/units/color-legend";
 import { Skeleton } from "@/components/ui/skeleton";
+import { z } from "zod";
 import { getUnitsBySlugs } from "@/lib/db/queries/units";
 import { safeCssColor } from "@/lib/safe-css-color";
 
@@ -13,6 +14,10 @@ export const metadata: Metadata = {
   title: "Compare",
   robots: { index: false, follow: true },
 };
+
+const unitSlugSchema = z
+  .string()
+  .regex(/^[a-z0-9][a-z0-9-]{0,79}$/);
 
 async function CompareContent({
   searchParams,
@@ -23,7 +28,7 @@ async function CompareContent({
   const slugs = (sp.units || "")
     .split(",")
     .map((s) => s.trim())
-    .filter(Boolean)
+    .filter((s) => unitSlugSchema.safeParse(s).success)
     .slice(0, 4);
 
   const units = await getUnitsBySlugs(slugs);

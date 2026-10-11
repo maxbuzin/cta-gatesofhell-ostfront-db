@@ -26,10 +26,15 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { z } from "zod";
 import { getUnitBySlug } from "@/lib/db/queries/units";
 import { formatStat } from "@/lib/safe";
 import { ColorLegend } from "@/components/units/color-legend";
 import { Skeleton } from "@/components/ui/skeleton";
+
+const unitSlugSchema = z
+  .string()
+  .regex(/^[a-z0-9][a-z0-9-]{0,79}$/);
 
 const AMMO_TOOLTIPS: Record<string, string> = {
   AP: "Armor-piercing solid shot.",
@@ -46,11 +51,14 @@ type Props = { params: Promise<{ slug: string }> };
 
 export function generateStaticParams() {
   // Placeholder for Cache Components validation; unknown slugs still 404 at runtime.
-  return [{ slug: "_placeholder" }];
+  return [{ slug: "placeholder" }];
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
+  if (!unitSlugSchema.safeParse(slug).success) {
+    return { title: "Unit not found" };
+  }
   const unit = await getUnitBySlug(slug);
   if (!unit) return { title: "Unit not found" };
   return {
@@ -62,6 +70,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 async function UnitDetailContent({ params }: Props) {
   const { slug } = await params;
+  if (!unitSlugSchema.safeParse(slug).success) notFound();
   const unit = await getUnitBySlug(slug);
   if (!unit) notFound();
 

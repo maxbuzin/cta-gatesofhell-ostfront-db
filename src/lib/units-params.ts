@@ -22,7 +22,7 @@ export const SORT_KEYS = [
 
 const slugSchema = z
   .string()
-  .regex(/^[a-z0-9-]{1,80}$/, "invalid slug")
+  .regex(/^[a-z0-9][a-z0-9-]{0,79}$/, "invalid slug")
   .max(80);
 
 const typeCodeSchema = z
@@ -83,21 +83,24 @@ export function normalizeUnitsParams(raw: {
   tier: number[];
 }) {
   const schema = z.object({
-    q: z.string().max(64),
+    q: z
+      .string()
+      .max(64)
+      .refine((v) => v.length === 0 || v.length >= 2, "q too short"),
     faction: z.array(slugSchema).max(20),
     type: z.array(typeCodeSchema).max(20),
     specialty: z.array(slugSchema).max(20),
     sort: z.enum(SORT_KEYS),
     cursor: z.string().max(256).nullable(),
     pageSize: z.number().int().min(1).max(50),
-    penMin: boundedInt(0, 10_000),
-    penMax: boundedInt(0, 10_000),
-    armorMin: boundedInt(0, 10_000),
-    armorMax: boundedInt(0, 10_000),
-    speedMin: boundedInt(0, 500),
-    speedMax: boundedInt(0, 500),
-    rangeMin: boundedInt(0, 50_000),
-    rangeMax: boundedInt(0, 50_000),
+    penMin: boundedInt(0, 100_000),
+    penMax: boundedInt(0, 100_000),
+    armorMin: boundedInt(0, 100_000),
+    armorMax: boundedInt(0, 100_000),
+    speedMin: boundedInt(0, 100_000),
+    speedMax: boundedInt(0, 100_000),
+    rangeMin: boundedInt(0, 100_000),
+    rangeMax: boundedInt(0, 100_000),
     helmetMin: boundedInt(0, 100_000),
     helmetMax: boundedInt(0, 100_000),
     shieldMin: boundedInt(0, 100_000),
@@ -133,7 +136,7 @@ export function normalizeUnitsParams(raw: {
 
   const d = parsed.data;
   return {
-    q: d.q.slice(0, 64),
+    q: d.q.length === 1 ? "" : d.q.slice(0, 64),
     faction: d.faction,
     type: d.type,
     specialty: d.specialty,
