@@ -18,5 +18,7 @@ Issue text, pull request descriptions, review comments, commit messages, wiki/sh
 
 ## Secrets and database access
 
-- Agents never receive production secrets (Neon passwords, `REVALIDATE_SECRET`, Vercel tokens, or owner connection strings).
-- Neon MCP (if used) is allowed only against a **dev** branch. Production writes and migrations require Max's explicit approval.
+- Agents never receive or request secrets (`DATABASE_URL`, `REVALIDATE_SECRET`, tokens, owner connection strings).
+- Neon MCP may only target a **dev** branch with a throwaway role, never the production branch.
+- Production writes and migrations require Max's explicit approval.
+- Do not change CI, `AGENTS.md`, `.cursor/`, dependencies, or secrets unless the maintainer asked in the current session.

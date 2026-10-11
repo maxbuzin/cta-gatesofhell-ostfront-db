@@ -7,7 +7,7 @@ mkdirSync(out, { recursive: true });
 const routes = [
   ['home', '/'],
   ['units', '/units'],
-  ['unit-detail', '/units/_placeholder'],
+  ['unit-detail', '/units/placeholder'],
   ['compare', '/compare'],
   ['research', '/research/germany'],
   ['factions', '/factions/germany'],

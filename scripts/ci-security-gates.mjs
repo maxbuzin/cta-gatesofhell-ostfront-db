@@ -48,7 +48,7 @@ function fail(msg) {
 }
 
 const AI_PKG =
-  /"(ai|openai|@anthropic-ai\/sdk|langchain|@google\/genai)"|"@ai-sdk\/|"@langchain\//;
+  /"(ai|openai|anthropic|langchain|cohere-ai|ollama)"|"@ai-sdk\/|"@anthropic-ai\/|"@langchain\/|"@google\/genai"|"@google\/generative-ai"|"@mistralai\/|"@huggingface\//;
 
 if (mode === "prebuild") {
   const pkg = readFileSync("package.json", "utf8");
@@ -71,10 +71,10 @@ if (mode === "prebuild") {
     }
   }
 
-  // Bidirectional controls, zero-width, and language-tag characters
-  // Covers all tracked text: src, AGENTS.md, .github, .cursor, docs, etc.
+  // Bidirectional / zero-width / soft-hyphen / word-joiner / tag chars
+  // Covers all tracked text: src, scripts, AGENTS.md, .github, .cursor, docs…
   const hidden =
-    /[\u202A-\u202E\u2066-\u2069\u200B-\u200F\uFEFF]|[\u{E0000}-\u{E007F}]/u;
+    /[\u00AD\u202A-\u202E\u2060-\u2064\u2066-\u2069\u200B-\u200F\uFEFF]|[\u{E0000}-\u{E007F}]/u;
   for (const f of trackedTextFiles()) {
     if (extname(f) === ".ico") continue;
     const content = readFileSync(f, "utf8");

@@ -8,9 +8,11 @@
 /pnpm-lock.yaml @maxbuzin
 /pnpm-workspace.yaml @maxbuzin
 /next.config.ts @maxbuzin
+/proxy.ts @maxbuzin
 /src/proxy.ts @maxbuzin
 /eslint.config.mjs @maxbuzin
 /.nvmrc @maxbuzin
+/.env.example @maxbuzin
 /scripts/ @maxbuzin
 /drizzle/ @maxbuzin
 /src/lib/db/ @maxbuzin

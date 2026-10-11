@@ -34,7 +34,7 @@ BEGIN
 END
 $$;
 
-ALTER ROLE goh_etl CONNECTION LIMIT 10;
+ALTER ROLE goh_etl CONNECTION LIMIT 5;
 ALTER ROLE goh_etl SET statement_timeout = '60s';
 ALTER ROLE goh_etl SET search_path = public;
 ALTER ROLE goh_etl SET lock_timeout = '1s';

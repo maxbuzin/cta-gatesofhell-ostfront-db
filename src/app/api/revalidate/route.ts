@@ -46,6 +46,11 @@ export async function POST(req: Request) {
     const token = auth.slice("Bearer ".length);
     if (!safeEqualToken(token, secret)) return unauthorized();
 
+    const contentType = req.headers.get("content-type") || "";
+    if (!contentType.toLowerCase().startsWith("application/json")) {
+      return unauthorized();
+    }
+
     const contentLength = req.headers.get("content-length");
     if (contentLength !== null) {
       const n = Number(contentLength);
