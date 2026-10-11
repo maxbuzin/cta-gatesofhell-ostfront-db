@@ -42,8 +42,8 @@ async function UnitsContent({
         <UnitsView
           rows={result.rows}
           total={result.total}
-          page={filters.page}
           pageSize={filters.pageSize}
+          nextCursor={result.nextCursor}
         />
       </div>
     </div>

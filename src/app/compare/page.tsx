@@ -62,8 +62,9 @@ async function CompareContent({
     squadSize: u!.squadSize,
   }));
 
+  // Index keys only (never unit slugs) so ChartStyle CSS vars stay safe.
   const series = units.map((u, i) => ({
-    key: u!.slug,
+    key: `u${i}`,
     label: u!.name,
     color: ["#c0443a", "#d4a43a", "#3e6fa8", "#7a8b5c"][i % 4],
   }));
@@ -75,9 +76,10 @@ async function CompareContent({
   const ranges = [...rangeSet].sort((a, b) => a - b);
   const chartData = ranges.map((rangeM) => {
     const row: { rangeM: number } & Record<string, number> = { rangeM };
-    for (const u of units) {
-      const pt = u!.penetration.find((p) => p.rangeM === rangeM);
-      if (pt) row[u!.slug] = Number(pt.penetrationMm);
+    for (let i = 0; i < units.length; i++) {
+      const u = units[i]!;
+      const pt = u.penetration.find((p) => p.rangeM === rangeM);
+      if (pt) row[`u${i}`] = Number(pt.penetrationMm);
     }
     return row;
   });

@@ -1,4 +1,10 @@
-import { createSearchParamsCache, parseAsArrayOf, parseAsInteger, parseAsString, parseAsStringEnum } from "nuqs/server";
+import {
+  createSearchParamsCache,
+  parseAsArrayOf,
+  parseAsInteger,
+  parseAsString,
+  parseAsStringEnum,
+} from "nuqs/server";
 import { z } from "zod";
 
 export const SORT_KEYS = [
@@ -14,13 +20,26 @@ export const SORT_KEYS = [
   "pen_desc",
 ] as const;
 
+const slugSchema = z
+  .string()
+  .regex(/^[a-z0-9-]{1,80}$/, "invalid slug")
+  .max(80);
+
+const typeCodeSchema = z
+  .string()
+  .regex(/^[a-z0-9_]{1,80}$/, "invalid type code")
+  .max(80);
+
+const boundedInt = (min: number, max: number) =>
+  z.number().int().min(min).max(max).nullable();
+
 export const unitsSearchParams = {
   q: parseAsString.withDefault(""),
   faction: parseAsArrayOf(parseAsString).withDefault([]),
   type: parseAsArrayOf(parseAsString).withDefault([]),
   specialty: parseAsArrayOf(parseAsString).withDefault([]),
   sort: parseAsStringEnum([...SORT_KEYS]).withDefault("name_asc"),
-  page: parseAsInteger.withDefault(1),
+  cursor: parseAsString,
   pageSize: parseAsInteger.withDefault(25),
   view: parseAsStringEnum(["table", "cards"] as const).withDefault("table"),
   penMin: parseAsInteger,
@@ -38,7 +57,8 @@ export const unitsSearchParams = {
   tier: parseAsArrayOf(parseAsInteger).withDefault([]),
 };
 
-export const unitsSearchParamsCache = createSearchParamsCache(unitsSearchParams);
+export const unitsSearchParamsCache =
+  createSearchParamsCache(unitsSearchParams);
 
 export function normalizeUnitsParams(raw: {
   q: string;
@@ -46,7 +66,7 @@ export function normalizeUnitsParams(raw: {
   type: string[];
   specialty: string[];
   sort: (typeof SORT_KEYS)[number];
-  page: number;
+  cursor: string | null;
   pageSize: number;
   penMin: number | null;
   penMax: number | null;
@@ -64,25 +84,25 @@ export function normalizeUnitsParams(raw: {
 }) {
   const schema = z.object({
     q: z.string().max(64),
-    faction: z.array(z.string().max(64)).max(20),
-    type: z.array(z.string().max(64)).max(20),
-    specialty: z.array(z.string().max(64)).max(20),
+    faction: z.array(slugSchema).max(20),
+    type: z.array(typeCodeSchema).max(20),
+    specialty: z.array(slugSchema).max(20),
     sort: z.enum(SORT_KEYS),
-    page: z.number().int().min(1).max(10_000),
+    cursor: z.string().max(256).nullable(),
     pageSize: z.number().int().min(1).max(50),
-    penMin: z.number().int().nullable(),
-    penMax: z.number().int().nullable(),
-    armorMin: z.number().int().nullable(),
-    armorMax: z.number().int().nullable(),
-    speedMin: z.number().int().nullable(),
-    speedMax: z.number().int().nullable(),
-    rangeMin: z.number().int().nullable(),
-    rangeMax: z.number().int().nullable(),
-    helmetMin: z.number().int().nullable(),
-    helmetMax: z.number().int().nullable(),
-    shieldMin: z.number().int().nullable(),
-    shieldMax: z.number().int().nullable(),
-    tier: z.array(z.number().int()).max(20),
+    penMin: boundedInt(0, 10_000),
+    penMax: boundedInt(0, 10_000),
+    armorMin: boundedInt(0, 10_000),
+    armorMax: boundedInt(0, 10_000),
+    speedMin: boundedInt(0, 500),
+    speedMax: boundedInt(0, 500),
+    rangeMin: boundedInt(0, 50_000),
+    rangeMax: boundedInt(0, 50_000),
+    helmetMin: boundedInt(0, 100_000),
+    helmetMax: boundedInt(0, 100_000),
+    shieldMin: boundedInt(0, 100_000),
+    shieldMax: boundedInt(0, 100_000),
+    tier: z.array(z.number().int().min(0).max(20)).max(20),
   });
 
   const parsed = schema.safeParse(raw);
@@ -93,7 +113,7 @@ export function normalizeUnitsParams(raw: {
       type: [] as string[],
       specialty: [] as string[],
       sort: "name_asc" as const,
-      page: 1,
+      cursor: null as string | null,
       pageSize: 25,
       penMin: undefined as number | undefined,
       penMax: undefined as number | undefined,
@@ -118,7 +138,7 @@ export function normalizeUnitsParams(raw: {
     type: d.type,
     specialty: d.specialty,
     sort: d.sort,
-    page: d.page,
+    cursor: d.cursor,
     pageSize: Math.min(50, d.pageSize),
     penMin: d.penMin ?? undefined,
     penMax: d.penMax ?? undefined,

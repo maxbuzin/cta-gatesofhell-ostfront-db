@@ -19,20 +19,23 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-No `DATABASE_URL` is required for UI development. Pages render empty states when the database is absent or empty.
+No `DATABASE_URL` is required for local UI development or `next build`. Pages render empty states when the database is absent or empty. Production runtime requires a pooled `goh_app_ro` URL.
 
 Optional env (see `.env.example`):
 
-- `DATABASE_URL` – Neon connection string for `goh_app_ro`
+- `DATABASE_URL` – Neon **pooler** URL for `goh_app_ro` (required in production)
+- `DATABASE_URL_OWNER` – owner / unpooled URL for `drizzle-kit` only (never on Vercel)
 - `REVALIDATE_SECRET` – Bearer token for `POST /api/revalidate` (≥ 32 bytes)
 - `NEXT_PUBLIC_SITE_URL` – canonical site URL
+
+Neon apply order and Max toggles: `docs/max-settings-checklist.md`.
 
 ## Scripts
 
 - `pnpm lint` – ESLint
 - `pnpm typecheck` – `tsc --noEmit`
 - `pnpm build` – production build
-- `pnpm db:generate` – Drizzle migrations from schema
+- `pnpm db:generate` – Drizzle migrations from schema (`DATABASE_URL_OWNER` required)
 
 ## Licenses
 

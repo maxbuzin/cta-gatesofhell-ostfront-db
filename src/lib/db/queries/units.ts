@@ -1,6 +1,22 @@
 import "server-only";
 
-import { and, asc, desc, eq, gte, ilike, inArray, lte, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  exists,
+  gt,
+  gte,
+  ilike,
+  inArray,
+  lt,
+  lte,
+  or,
+  sql,
+  type SQL,
+} from "drizzle-orm";
+import { cacheLife, cacheTag } from "next/cache";
 
 import { getDb } from "@/lib/db/client";
 import {
@@ -31,7 +47,7 @@ export type UnitListFilters = {
   type?: string[];
   specialty?: string[];
   sort?: string;
-  page?: number;
+  cursor?: string | null;
   pageSize?: number;
   penMin?: number;
   penMax?: number;
@@ -49,23 +65,82 @@ export type UnitListFilters = {
 };
 
 const SORT_MAP = {
-  name_asc: { col: units.name, dir: "asc" as const },
-  name_desc: { col: units.name, dir: "desc" as const },
-  hp_asc: { col: unitStats.hp, dir: "asc" as const },
-  hp_desc: { col: unitStats.hp, dir: "desc" as const },
-  armor_asc: { col: unitStats.armorFrontMm, dir: "asc" as const },
-  armor_desc: { col: unitStats.armorFrontMm, dir: "desc" as const },
-  speed_asc: { col: unitStats.speedRoadKmh, dir: "asc" as const },
-  speed_desc: { col: unitStats.speedRoadKmh, dir: "desc" as const },
-  pen_asc: { col: unitStats.penetrationMm, dir: "asc" as const },
-  pen_desc: { col: unitStats.penetrationMm, dir: "desc" as const },
+  name_asc: { col: units.name, dir: "asc" as const, key: "name" as const },
+  name_desc: { col: units.name, dir: "desc" as const, key: "name" as const },
+  hp_asc: { col: unitStats.hp, dir: "asc" as const, key: "hp" as const },
+  hp_desc: { col: unitStats.hp, dir: "desc" as const, key: "hp" as const },
+  armor_asc: {
+    col: unitStats.armorFrontMm,
+    dir: "asc" as const,
+    key: "armor" as const,
+  },
+  armor_desc: {
+    col: unitStats.armorFrontMm,
+    dir: "desc" as const,
+    key: "armor" as const,
+  },
+  speed_asc: {
+    col: unitStats.speedRoadKmh,
+    dir: "asc" as const,
+    key: "speed" as const,
+  },
+  speed_desc: {
+    col: unitStats.speedRoadKmh,
+    dir: "desc" as const,
+    key: "speed" as const,
+  },
+  pen_asc: {
+    col: unitStats.penetrationMm,
+    dir: "asc" as const,
+    key: "pen" as const,
+  },
+  pen_desc: {
+    col: unitStats.penetrationMm,
+    dir: "desc" as const,
+    key: "pen" as const,
+  },
 } as const;
 
 export type SortKey = keyof typeof SORT_MAP;
 
+type CursorPayload = { id: number; v: string | number | null };
+
+function encodeCursor(payload: CursorPayload): string {
+  return Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
+}
+
+function decodeCursor(raw: string | null | undefined): CursorPayload | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(
+      Buffer.from(raw, "base64url").toString("utf8"),
+    ) as CursorPayload;
+    if (typeof parsed.id !== "number" || !Number.isFinite(parsed.id)) {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+async function currentVersionId(): Promise<number | null> {
+  const db = getDb();
+  if (!db) return null;
+  const [row] = await db
+    .select({ id: gameVersions.id })
+    .from(gameVersions)
+    .where(eq(gameVersions.isCurrent, true))
+    .limit(1);
+  return row?.id ?? null;
+}
+
 export async function getUnitCountsByType(): Promise<
   { code: string; nameEn: string; count: number }[]
 > {
+  "use cache";
+  cacheLife("max");
+  cacheTag("units", "home");
   const db = getDb();
   if (!db) return [];
   try {
@@ -87,6 +162,9 @@ export async function getUnitCountsByType(): Promise<
 }
 
 export async function getFactions() {
+  "use cache";
+  cacheLife("max");
+  cacheTag("factions");
   const db = getDb();
   if (!db) return [];
   try {
@@ -98,6 +176,9 @@ export async function getFactions() {
 }
 
 export async function getFactionBySlug(slug: string) {
+  "use cache";
+  cacheLife("max");
+  cacheTag("factions", `faction:${slug}`);
   const db = getDb();
   if (!db) return null;
   try {
@@ -114,6 +195,9 @@ export async function getFactionBySlug(slug: string) {
 }
 
 export async function getSpecialties() {
+  "use cache";
+  cacheLife("max");
+  cacheTag("units");
   const db = getDb();
   if (!db) return [];
   try {
@@ -125,6 +209,9 @@ export async function getSpecialties() {
 }
 
 export async function getCurrentGameVersion() {
+  "use cache";
+  cacheLife("max");
+  cacheTag("patches");
   const db = getDb();
   if (!db) return null;
   try {
@@ -141,6 +228,9 @@ export async function getCurrentGameVersion() {
 }
 
 export async function getPopularComparisons() {
+  "use cache";
+  cacheLife("max");
+  cacheTag("home");
   const db = getDb();
   if (!db) return [];
   try {
@@ -155,6 +245,9 @@ export async function getPopularComparisons() {
 }
 
 export async function getSourcesList() {
+  "use cache";
+  cacheLife("max");
+  cacheTag("sources");
   const db = getDb();
   if (!db) return [];
   try {
@@ -166,6 +259,9 @@ export async function getSourcesList() {
 }
 
 export async function getGameVersions() {
+  "use cache";
+  cacheLife("max");
+  cacheTag("patches");
   const db = getDb();
   if (!db) return [];
   try {
@@ -180,61 +276,35 @@ export async function getGameVersions() {
 }
 
 export async function listUnits(filters: UnitListFilters) {
+  "use cache";
+  cacheLife("max");
+  cacheTag("units");
   const db = getDb();
   if (!db) {
-    return { rows: [], total: 0 };
+    return { rows: [], total: 0, nextCursor: null as string | null };
   }
 
-  const page = Math.max(1, filters.page ?? 1);
   const pageSize = Math.min(50, Math.max(1, filters.pageSize ?? 25));
-  const offset = (page - 1) * pageSize;
   const sortKey = (filters.sort ?? "name_asc") as SortKey;
   const sort = SORT_MAP[sortKey] ?? SORT_MAP.name_asc;
+  const cursor = decodeCursor(filters.cursor);
 
   try {
-    const conditions = [];
+    const versionId = await currentVersionId();
+    const where = await buildListWhere(db, filters, versionId, cursor);
+    const totalWhere = await buildListWhere(db, filters, versionId, null);
+    const orderBy =
+      sort.dir === "asc"
+        ? [asc(sort.col), asc(units.id)]
+        : [desc(sort.col), desc(units.id)];
 
-    if (filters.q) {
-      const q = escapeLike(filters.q.slice(0, 64));
-      conditions.push(ilike(units.searchName, `%${q}%`));
-    }
-    if (filters.faction?.length) {
-      conditions.push(inArray(factions.slug, filters.faction));
-    }
-    if (filters.type?.length) {
-      conditions.push(inArray(unitTypes.code, filters.type));
-    }
-    if (filters.penMin !== undefined) {
-      conditions.push(gte(unitStats.penetrationMm, filters.penMin));
-    }
-    if (filters.penMax !== undefined) {
-      conditions.push(lte(unitStats.penetrationMm, filters.penMax));
-    }
-    if (filters.armorMin !== undefined) {
-      conditions.push(gte(unitStats.armorFrontMm, filters.armorMin));
-    }
-    if (filters.armorMax !== undefined) {
-      conditions.push(lte(unitStats.armorFrontMm, filters.armorMax));
-    }
-    if (filters.speedMin !== undefined) {
-      conditions.push(gte(unitStats.speedRoadKmh, filters.speedMin));
-    }
-    if (filters.speedMax !== undefined) {
-      conditions.push(lte(unitStats.speedRoadKmh, filters.speedMax));
-    }
-    if (filters.rangeMin !== undefined) {
-      conditions.push(gte(unitStats.rangeM, filters.rangeMin));
-    }
-    if (filters.rangeMax !== undefined) {
-      conditions.push(lte(unitStats.rangeM, filters.rangeMax));
-    }
-    if (filters.tier?.length) {
-      conditions.push(inArray(units.tier, filters.tier));
-    }
-
-    const where = conditions.length ? and(...conditions) : undefined;
-
-    const orderBy = sort.dir === "asc" ? asc(sort.col) : desc(sort.col);
+    const statsJoin =
+      versionId === null
+        ? sql`false`
+        : and(
+            eq(unitStats.unitId, units.id),
+            eq(unitStats.gameVersionId, versionId),
+          );
 
     const rows = await db
       .select({
@@ -271,60 +341,40 @@ export async function listUnits(filters: UnitListFilters) {
       .from(units)
       .innerJoin(factions, eq(units.factionId, factions.id))
       .innerJoin(unitTypes, eq(units.unitTypeId, unitTypes.id))
-      .leftJoin(unitStats, eq(unitStats.unitId, units.id))
+      .leftJoin(unitStats, statsJoin)
       .where(where)
-      .orderBy(orderBy)
-      .limit(pageSize)
-      .offset(offset);
+      .orderBy(...orderBy)
+      .limit(pageSize + 1);
 
-    const [countRow] = await db
+    const [totalRow] = await db
       .select({ count: sql<number>`count(distinct ${units.id})::int` })
       .from(units)
       .innerJoin(factions, eq(units.factionId, factions.id))
       .innerJoin(unitTypes, eq(units.unitTypeId, unitTypes.id))
-      .leftJoin(unitStats, eq(unitStats.unitId, units.id))
-      .where(where);
+      .leftJoin(unitStats, statsJoin)
+      .where(totalWhere);
 
-    let filtered = rows;
-    if (filters.specialty?.length) {
-      const unitIds = rows.map((r) => r.id);
-      if (unitIds.length === 0) {
-        return { rows: [], total: 0 };
-      }
-      const specs = await db
-        .select({
-          unitId: unitSpecialties.unitId,
-          slug: specialties.slug,
-        })
-        .from(unitSpecialties)
-        .innerJoin(
-          specialties,
-          eq(unitSpecialties.specialtyId, specialties.id),
-        )
-        .where(inArray(unitSpecialties.unitId, unitIds));
-      const byUnit = new Map<number, string[]>();
-      for (const s of specs) {
-        const list = byUnit.get(s.unitId) ?? [];
-        list.push(s.slug);
-        byUnit.set(s.unitId, list);
-      }
-      filtered = rows.filter((r) => {
-        const slugs = byUnit.get(r.id) ?? [];
-        return filters.specialty!.some((sp) => slugs.includes(sp));
-      });
-    }
+    const hasMore = rows.length > pageSize;
+    const pageRows = hasMore ? rows.slice(0, pageSize) : rows;
 
-    // Attach costs
-    const ids = filtered.map((r) => r.id);
+    const ids = pageRows.map((r) => r.id);
     const costs =
-      ids.length === 0
+      ids.length === 0 || versionId === null
         ? []
         : await db
             .select()
             .from(unitCosts)
-            .where(inArray(unitCosts.unitId, ids));
+            .where(
+              and(
+                inArray(unitCosts.unitId, ids),
+                eq(unitCosts.gameVersionId, versionId),
+              ),
+            );
 
-    const costMap = new Map<number, { cp: number | null; resources: number | null }>();
+    const costMap = new Map<
+      number,
+      { cp: number | null; resources: number | null }
+    >();
     for (const c of costs) {
       const cur = costMap.get(c.unitId) ?? { cp: null, resources: null };
       if (c.kind === "cp") cur.cp = c.amount;
@@ -355,49 +405,187 @@ export async function listUnits(filters: UnitListFilters) {
       specMap.set(s.unitId, list);
     }
 
-    const enriched = filtered.map((r) => ({
+    const enriched = pageRows.map((r) => ({
       ...r,
       costCp: costMap.get(r.id)?.cp ?? null,
       costResources: costMap.get(r.id)?.resources ?? null,
       specialties: specMap.get(r.id) ?? [],
     }));
 
-    // Optional cost range filters (post-join)
-    let finalRows = enriched;
-    if (filters.helmetMin !== undefined) {
-      finalRows = finalRows.filter(
-        (r) => r.costCp !== null && r.costCp >= filters.helmetMin!,
-      );
-    }
-    if (filters.helmetMax !== undefined) {
-      finalRows = finalRows.filter(
-        (r) => r.costCp !== null && r.costCp <= filters.helmetMax!,
-      );
-    }
-    if (filters.shieldMin !== undefined) {
-      finalRows = finalRows.filter(
-        (r) =>
-          r.costResources !== null && r.costResources >= filters.shieldMin!,
-      );
-    }
-    if (filters.shieldMax !== undefined) {
-      finalRows = finalRows.filter(
-        (r) =>
-          r.costResources !== null && r.costResources <= filters.shieldMax!,
-      );
+    let nextCursor: string | null = null;
+    if (hasMore && pageRows.length > 0) {
+      const last = pageRows[pageRows.length - 1]!;
+      const v =
+        sort.key === "name"
+          ? last.name
+          : sort.key === "hp"
+            ? last.hp
+            : sort.key === "armor"
+              ? last.armorFrontMm
+              : sort.key === "speed"
+                ? last.speedRoadKmh
+                : last.penetrationMm;
+      nextCursor = encodeCursor({ id: last.id, v: v ?? null });
     }
 
-    return { rows: finalRows, total: countRow?.count ?? 0 };
+    return {
+      rows: enriched,
+      total: totalRow?.count ?? 0,
+      nextCursor,
+    };
   } catch {
     console.error("Failed to list units");
-    return { rows: [], total: 0 };
+    return { rows: [], total: 0, nextCursor: null as string | null };
   }
 }
 
+async function buildListWhere(
+  db: NonNullable<ReturnType<typeof getDb>>,
+  filters: UnitListFilters,
+  versionId: number | null,
+  cursor: CursorPayload | null,
+): Promise<SQL | undefined> {
+  const sortKey = (filters.sort ?? "name_asc") as SortKey;
+  const sort = SORT_MAP[sortKey] ?? SORT_MAP.name_asc;
+  const conditions: SQL[] = [];
+
+  if (filters.q) {
+    const q = escapeLike(filters.q.slice(0, 64));
+    conditions.push(ilike(units.searchName, `%${q}%`));
+  }
+  if (filters.faction?.length) {
+    conditions.push(inArray(factions.slug, filters.faction));
+  }
+  if (filters.type?.length) {
+    conditions.push(inArray(unitTypes.code, filters.type));
+  }
+  if (filters.penMin !== undefined) {
+    conditions.push(gte(unitStats.penetrationMm, filters.penMin));
+  }
+  if (filters.penMax !== undefined) {
+    conditions.push(lte(unitStats.penetrationMm, filters.penMax));
+  }
+  if (filters.armorMin !== undefined) {
+    conditions.push(gte(unitStats.armorFrontMm, filters.armorMin));
+  }
+  if (filters.armorMax !== undefined) {
+    conditions.push(lte(unitStats.armorFrontMm, filters.armorMax));
+  }
+  if (filters.speedMin !== undefined) {
+    conditions.push(gte(unitStats.speedRoadKmh, filters.speedMin));
+  }
+  if (filters.speedMax !== undefined) {
+    conditions.push(lte(unitStats.speedRoadKmh, filters.speedMax));
+  }
+  if (filters.rangeMin !== undefined) {
+    conditions.push(gte(unitStats.rangeM, filters.rangeMin));
+  }
+  if (filters.rangeMax !== undefined) {
+    conditions.push(lte(unitStats.rangeM, filters.rangeMax));
+  }
+  if (filters.tier?.length) {
+    conditions.push(inArray(units.tier, filters.tier));
+  }
+  if (filters.specialty?.length) {
+    conditions.push(
+      exists(
+        db
+          .select({ one: sql`1` })
+          .from(unitSpecialties)
+          .innerJoin(
+            specialties,
+            eq(unitSpecialties.specialtyId, specialties.id),
+          )
+          .where(
+            and(
+              eq(unitSpecialties.unitId, units.id),
+              inArray(specialties.slug, filters.specialty),
+            ),
+          ),
+      ),
+    );
+  }
+  if (versionId !== null) {
+    if (filters.helmetMin !== undefined || filters.helmetMax !== undefined) {
+      const costConds = [
+        eq(unitCosts.unitId, units.id),
+        eq(unitCosts.gameVersionId, versionId),
+        eq(unitCosts.kind, "cp"),
+        eq(unitCosts.gameMode, "conquest"),
+      ];
+      if (filters.helmetMin !== undefined) {
+        costConds.push(gte(unitCosts.amount, filters.helmetMin));
+      }
+      if (filters.helmetMax !== undefined) {
+        costConds.push(lte(unitCosts.amount, filters.helmetMax));
+      }
+      conditions.push(
+        exists(
+          db.select({ one: sql`1` }).from(unitCosts).where(and(...costConds)),
+        ),
+      );
+    }
+    if (filters.shieldMin !== undefined || filters.shieldMax !== undefined) {
+      const costConds = [
+        eq(unitCosts.unitId, units.id),
+        eq(unitCosts.gameVersionId, versionId),
+        eq(unitCosts.kind, "resources"),
+        eq(unitCosts.gameMode, "conquest"),
+      ];
+      if (filters.shieldMin !== undefined) {
+        costConds.push(gte(unitCosts.amount, filters.shieldMin));
+      }
+      if (filters.shieldMax !== undefined) {
+        costConds.push(lte(unitCosts.amount, filters.shieldMax));
+      }
+      conditions.push(
+        exists(
+          db.select({ one: sql`1` }).from(unitCosts).where(and(...costConds)),
+        ),
+      );
+    }
+  }
+  if (cursor) {
+    const cmp = sort.dir === "asc" ? gt : lt;
+    const tie = sort.dir === "asc" ? gt : lt;
+    if (sort.key === "name") {
+      const name = String(cursor.v ?? "");
+      conditions.push(
+        or(
+          cmp(units.name, name),
+          and(eq(units.name, name), tie(units.id, cursor.id)),
+        )!,
+      );
+    } else {
+      const num =
+        typeof cursor.v === "number"
+          ? cursor.v
+          : cursor.v === null
+            ? null
+            : Number(cursor.v);
+      if (num !== null && !Number.isNaN(num)) {
+        conditions.push(
+          or(
+            cmp(sort.col, num),
+            and(eq(sort.col, num), tie(units.id, cursor.id)),
+          )!,
+        );
+      } else {
+        conditions.push(tie(units.id, cursor.id));
+      }
+    }
+  }
+  return conditions.length ? and(...conditions) : undefined;
+}
+
 export async function getUnitBySlug(slug: string) {
+  "use cache";
+  cacheLife("max");
+  cacheTag("units", `unit:${slug}`);
   const db = getDb();
   if (!db) return null;
   try {
+    const versionId = await currentVersionId();
     const [row] = await db
       .select({
         id: units.id,
@@ -427,16 +615,32 @@ export async function getUnitBySlug(slug: string) {
 
     if (!row) return null;
 
-    const [stats] = await db
-      .select()
-      .from(unitStats)
-      .where(eq(unitStats.unitId, row.id))
-      .limit(1);
+    const stats =
+      versionId === null
+        ? []
+        : await db
+            .select()
+            .from(unitStats)
+            .where(
+              and(
+                eq(unitStats.unitId, row.id),
+                eq(unitStats.gameVersionId, versionId),
+              ),
+            )
+            .limit(1);
 
-    const costs = await db
-      .select()
-      .from(unitCosts)
-      .where(eq(unitCosts.unitId, row.id));
+    const costs =
+      versionId === null
+        ? []
+        : await db
+            .select()
+            .from(unitCosts)
+            .where(
+              and(
+                eq(unitCosts.unitId, row.id),
+                eq(unitCosts.gameVersionId, versionId),
+              ),
+            );
 
     const specs = await db
       .select({
@@ -447,24 +651,32 @@ export async function getUnitBySlug(slug: string) {
       .innerJoin(specialties, eq(unitSpecialties.specialtyId, specialties.id))
       .where(eq(unitSpecialties.unitId, row.id));
 
-    const weaponsRows = await db
-      .select({
-        weaponId: weapons.id,
-        slug: weapons.slug,
-        name: weapons.name,
-        caliberMm: weapons.caliberMm,
-        reloadS: weapons.reloadS,
-        maxRangeM: weapons.maxRangeM,
-        mount: unitWeapons.mount,
-        quantity: unitWeapons.quantity,
-      })
-      .from(unitWeapons)
-      .innerJoin(weapons, eq(unitWeapons.weaponId, weapons.id))
-      .where(eq(unitWeapons.unitId, row.id));
+    const weaponsRows =
+      versionId === null
+        ? []
+        : await db
+            .select({
+              weaponId: weapons.id,
+              slug: weapons.slug,
+              name: weapons.name,
+              caliberMm: weapons.caliberMm,
+              reloadS: weapons.reloadS,
+              maxRangeM: weapons.maxRangeM,
+              mount: unitWeapons.mount,
+              quantity: unitWeapons.quantity,
+            })
+            .from(unitWeapons)
+            .innerJoin(weapons, eq(unitWeapons.weaponId, weapons.id))
+            .where(
+              and(
+                eq(unitWeapons.unitId, row.id),
+                eq(unitWeapons.gameVersionId, versionId),
+              ),
+            );
 
     const weaponIds = weaponsRows.map((w) => w.weaponId);
     const ammoRows =
-      weaponIds.length === 0
+      weaponIds.length === 0 || versionId === null
         ? []
         : await db
             .select({
@@ -478,20 +690,30 @@ export async function getUnitBySlug(slug: string) {
             })
             .from(weaponAmmo)
             .innerJoin(ammoTypes, eq(weaponAmmo.ammoTypeId, ammoTypes.id))
-            .where(inArray(weaponAmmo.weaponId, weaponIds));
+            .where(
+              and(
+                inArray(weaponAmmo.weaponId, weaponIds),
+                eq(weaponAmmo.gameVersionId, versionId),
+              ),
+            );
 
     const ammoIds = [...new Set(ammoRows.map((a) => a.ammoId))];
     const penRows =
-      ammoIds.length === 0
+      ammoIds.length === 0 || versionId === null
         ? []
         : await db
             .select()
             .from(penetrationByRange)
-            .where(inArray(penetrationByRange.ammoTypeId, ammoIds));
+            .where(
+              and(
+                inArray(penetrationByRange.ammoTypeId, ammoIds),
+                eq(penetrationByRange.gameVersionId, versionId),
+              ),
+            );
 
     return {
       ...row,
-      stats: stats ?? null,
+      stats: stats[0] ?? null,
       costs,
       specialties: specs,
       weapons: weaponsRows.map((w) => ({
@@ -514,6 +736,9 @@ export async function getUnitsBySlugs(slugs: string[]) {
 }
 
 export async function getSearchIndex() {
+  "use cache";
+  cacheLife("max");
+  cacheTag("units", "home");
   const db = getDb();
   if (!db) return [];
   try {
@@ -540,16 +765,28 @@ export async function getSearchIndex() {
 }
 
 export async function getResearchTree(factionSlug: string) {
+  "use cache";
+  cacheLife("max");
+  cacheTag("research", `research:${factionSlug}`);
   const db = getDb();
   if (!db) return { nodes: [], edges: [], faction: null };
   try {
     const faction = await getFactionBySlug(factionSlug);
     if (!faction) return { nodes: [], edges: [], faction: null };
 
-    const nodes = await db
-      .select()
-      .from(researchNodes)
-      .where(eq(researchNodes.factionId, faction.id));
+    const versionId = await currentVersionId();
+    const nodes =
+      versionId === null
+        ? []
+        : await db
+            .select()
+            .from(researchNodes)
+            .where(
+              and(
+                eq(researchNodes.factionId, faction.id),
+                eq(researchNodes.gameVersionId, versionId),
+              ),
+            );
 
     const nodeIds = nodes.map((n) => n.id);
     const edges =
@@ -589,6 +826,9 @@ export async function getResearchTree(factionSlug: string) {
 }
 
 export async function getFactionUnitCounts(factionId: number) {
+  "use cache";
+  cacheLife("max");
+  cacheTag("factions");
   const db = getDb();
   if (!db) return [];
   try {

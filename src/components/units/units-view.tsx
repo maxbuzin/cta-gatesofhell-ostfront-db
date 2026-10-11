@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useQueryState, parseAsStringEnum } from "nuqs";
+import { useQueryState, parseAsString, parseAsStringEnum } from "nuqs";
 import { LayoutGrid, TableIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -58,18 +58,19 @@ export type UnitListRow = {
 export function UnitsView({
   rows,
   total,
-  page,
   pageSize,
+  nextCursor,
 }: {
   rows: UnitListRow[];
   total: number;
-  page: number;
   pageSize: number;
+  nextCursor: string | null;
 }) {
   const [view, setView] = useQueryState(
     "view",
     parseAsStringEnum(["table", "cards"] as const).withDefault("table"),
   );
+  const [cursor, setCursor] = useQueryState("cursor", parseAsString);
 
   if (rows.length === 0) {
     return (
@@ -87,9 +88,7 @@ export function UnitsView({
       <div className="flex items-center justify-between gap-2">
         <p className="font-stat text-sm text-muted-foreground">
           {total} unit{total === 1 ? "" : "s"}
-          {total > pageSize
-            ? ` · page ${page} of ${Math.ceil(total / pageSize)}`
-            : ""}
+          {total > pageSize ? ` · showing ${rows.length}` : ""}
         </p>
         <div className="flex gap-1">
           <Button
@@ -296,6 +295,29 @@ export function UnitsView({
               ))}
             </TableBody>
           </Table>
+        </div>
+      )}
+
+      {(cursor || nextCursor) && (
+        <div className="flex items-center justify-end gap-2 pt-2">
+          {cursor ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void setCursor(null)}
+            >
+              First page
+            </Button>
+          ) : null}
+          {nextCursor ? (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => void setCursor(nextCursor)}
+            >
+              Next
+            </Button>
+          ) : null}
         </div>
       )}
     </div>

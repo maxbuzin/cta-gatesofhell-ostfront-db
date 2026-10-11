@@ -63,7 +63,7 @@ export function FilterPanel({ factions }: { factions: FactionOpt[] }) {
       shieldMin: parseAsInteger,
       shieldMax: parseAsInteger,
       tier: parseAsArrayOf(parseAsInteger).withDefault([]),
-      page: parseAsInteger.withDefault(1),
+      cursor: parseAsString,
     },
     { history: "replace", shallow: false },
   );
@@ -73,7 +73,7 @@ export function FilterPanel({ factions }: { factions: FactionOpt[] }) {
     const next = cur.includes(value)
       ? cur.filter((v) => v !== value)
       : [...cur, value];
-    void setParams({ [key]: next, page: 1 });
+    void setParams({ [key]: next, cursor: null });
   };
 
   const factionOpts =
@@ -100,7 +100,7 @@ export function FilterPanel({ factions }: { factions: FactionOpt[] }) {
           maxLength={64}
           placeholder="Unit name..."
           onChange={(e) =>
-            void setParams({ q: e.target.value.slice(0, 64), page: 1 })
+            void setParams({ q: e.target.value.slice(0, 64), cursor: null })
           }
         />
       </div>
@@ -189,7 +189,7 @@ export function FilterPanel({ factions }: { factions: FactionOpt[] }) {
                 onChange={(e) =>
                   void setParams({
                     [minKey]: e.target.value === "" ? null : Number(e.target.value),
-                    page: 1,
+                    cursor: null,
                   })
                 }
               />
@@ -201,7 +201,7 @@ export function FilterPanel({ factions }: { factions: FactionOpt[] }) {
                 onChange={(e) =>
                   void setParams({
                     [maxKey]: e.target.value === "" ? null : Number(e.target.value),
-                    page: 1,
+                    cursor: null,
                   })
                 }
               />
@@ -233,7 +233,7 @@ export function FilterPanel({ factions }: { factions: FactionOpt[] }) {
             shieldMin: null,
             shieldMax: null,
             tier: [],
-            page: 1,
+            cursor: null,
           })
         }
       >

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { getFactions, getResearchTree } from "@/lib/db/queries/units";
-import { FACTIONS, FACTION_COLORS } from "@/lib/factions";
+import { FACTIONS } from "@/lib/factions";
 import { cn } from "@/lib/utils";
 import { ResearchTreeClient } from "@/components/research/research-tree-client";
 import { Skeleton } from "@/components/ui/skeleton";

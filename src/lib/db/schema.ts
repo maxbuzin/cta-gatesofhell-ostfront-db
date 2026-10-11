@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  type AnyPgColumn,
   boolean,
   check,
   date,
@@ -120,16 +121,26 @@ export const sources = pgTable("sources", {
   notes: text(),
 });
 
-export const factions = pgTable("factions", {
-  id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  slug: text().notNull().unique(),
-  nameEn: text("name_en").notNull(),
-  namePt: text("name_pt"),
-  color: text(),
-  sortOrder: smallint("sort_order").default(0),
-  strengths: text(),
-  weaknesses: text(),
-});
+export const factions = pgTable(
+  "factions",
+  {
+    id: integer().primaryKey().generatedAlwaysAsIdentity(),
+    slug: text().notNull().unique(),
+    nameEn: text("name_en").notNull(),
+    namePt: text("name_pt"),
+    color: text(),
+    sortOrder: smallint("sort_order").default(0),
+    strengths: text(),
+    weaknesses: text(),
+  },
+  (t) => [
+    check("factions_slug_format", sql`${t.slug} ~ '^[a-z0-9-]{1,80}$'`),
+    check(
+      "factions_color_hex",
+      sql`${t.color} IS NULL OR ${t.color} ~ '^#[0-9A-Fa-f]{6}$'`,
+    ),
+  ],
+);
 
 export const unitTypes = pgTable("unit_types", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -165,7 +176,10 @@ export const units = pgTable(
       () => gameVersions.id,
     ),
     confidence: dataConfidence().default("community").notNull(),
-    primaryImageId: integer("primary_image_id"),
+    primaryImageId: integer("primary_image_id").references(
+      (): AnyPgColumn => images.id,
+      { onDelete: "set null" },
+    ),
     tier: smallint(),
     notes: text(),
     bestAt: text("best_at"),
@@ -174,6 +188,11 @@ export const units = pgTable(
   },
   (t) => [
     index("units_faction_type_idx").on(t.factionId, t.unitTypeId),
+    index("units_search_trgm_idx").using(
+      "gin",
+      sql`${t.searchName} gin_trgm_ops`,
+    ),
+    check("units_slug_format", sql`${t.slug} ~ '^[a-z0-9-]{1,80}$'`),
   ],
 );
 
@@ -185,7 +204,13 @@ export const unitAliases = pgTable(
       .references(() => units.id, { onDelete: "cascade" }),
     alias: text().notNull(),
   },
-  (t) => [primaryKey({ columns: [t.unitId, t.alias] })],
+  (t) => [
+    primaryKey({ columns: [t.unitId, t.alias] }),
+    index("unit_aliases_trgm_idx").using(
+      "gin",
+      sql`lower(immutable_unaccent(${t.alias})) gin_trgm_ops`,
+    ),
+  ],
 );
 
 export const unitStats = pgTable(
@@ -291,26 +316,30 @@ export const unitCosts = pgTable(
   ],
 );
 
-export const weapons = pgTable("weapons", {
-  id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  slug: text().notNull().unique(),
-  name: text().notNull(),
-  caliberMm: numeric("caliber_mm", {
-    precision: 6,
-    scale: 2,
-    mode: "number",
-  }),
-  weaponClass: text("weapon_class"),
-  rateOfFireRpm: numeric("rate_of_fire_rpm", {
-    precision: 7,
-    scale: 2,
-    mode: "number",
-  }),
-  reloadS: numeric("reload_s", { precision: 5, scale: 2, mode: "number" }),
-  maxRangeM: integer("max_range_m"),
-  accuracyNote: text("accuracy_note"),
-  extra: jsonb(),
-});
+export const weapons = pgTable(
+  "weapons",
+  {
+    id: integer().primaryKey().generatedAlwaysAsIdentity(),
+    slug: text().notNull().unique(),
+    name: text().notNull(),
+    caliberMm: numeric("caliber_mm", {
+      precision: 6,
+      scale: 2,
+      mode: "number",
+    }),
+    weaponClass: text("weapon_class"),
+    rateOfFireRpm: numeric("rate_of_fire_rpm", {
+      precision: 7,
+      scale: 2,
+      mode: "number",
+    }),
+    reloadS: numeric("reload_s", { precision: 5, scale: 2, mode: "number" }),
+    maxRangeM: integer("max_range_m"),
+    accuracyNote: text("accuracy_note"),
+    extra: jsonb(),
+  },
+  (t) => [check("weapons_slug_format", sql`${t.slug} ~ '^[a-z0-9-]{1,80}$'`)],
+);
 
 export const unitWeapons = pgTable(
   "unit_weapons",
@@ -335,26 +364,30 @@ export const unitWeapons = pgTable(
   ],
 );
 
-export const ammoTypes = pgTable("ammo_types", {
-  id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  slug: text().notNull().unique(),
-  name: text().notNull(),
-  kind: ammoKind().notNull(),
-  caliberMm: numeric("caliber_mm", {
-    precision: 6,
-    scale: 2,
-    mode: "number",
-  }),
-  muzzleVelocityMs: integer("muzzle_velocity_ms"),
-  damage: numeric({ precision: 7, scale: 2, mode: "number" }),
-  heDamage: numeric("he_damage", { precision: 7, scale: 2, mode: "number" }),
-  blastRadiusM: numeric("blast_radius_m", {
-    precision: 6,
-    scale: 2,
-    mode: "number",
-  }),
-  extra: jsonb(),
-});
+export const ammoTypes = pgTable(
+  "ammo_types",
+  {
+    id: integer().primaryKey().generatedAlwaysAsIdentity(),
+    slug: text().notNull().unique(),
+    name: text().notNull(),
+    kind: ammoKind().notNull(),
+    caliberMm: numeric("caliber_mm", {
+      precision: 6,
+      scale: 2,
+      mode: "number",
+    }),
+    muzzleVelocityMs: integer("muzzle_velocity_ms"),
+    damage: numeric({ precision: 7, scale: 2, mode: "number" }),
+    heDamage: numeric("he_damage", { precision: 7, scale: 2, mode: "number" }),
+    blastRadiusM: numeric("blast_radius_m", {
+      precision: 6,
+      scale: 2,
+      mode: "number",
+    }),
+    extra: jsonb(),
+  },
+  (t) => [check("ammo_types_slug_format", sql`${t.slug} ~ '^[a-z0-9-]{1,80}$'`)],
+);
 
 export const weaponAmmo = pgTable(
   "weapon_ammo",
@@ -402,14 +435,18 @@ export const penetrationByRange = pgTable(
   ],
 );
 
-export const specialties = pgTable("specialties", {
-  id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  slug: text().notNull().unique(),
-  nameEn: text("name_en").notNull(),
-  descriptionEn: text("description_en"),
-  descriptionPt: text("description_pt"),
-  icon: text(),
-});
+export const specialties = pgTable(
+  "specialties",
+  {
+    id: integer().primaryKey().generatedAlwaysAsIdentity(),
+    slug: text().notNull().unique(),
+    nameEn: text("name_en").notNull(),
+    descriptionEn: text("description_en"),
+    descriptionPt: text("description_pt"),
+    icon: text(),
+  },
+  (t) => [check("specialties_slug_format", sql`${t.slug} ~ '^[a-z0-9-]{1,80}$'`)],
+);
 
 export const unitSpecialties = pgTable(
   "unit_specialties",
@@ -452,6 +489,7 @@ export const researchNodes = pgTable(
       t.gameVersionId,
       t.slug,
     ),
+    check("research_nodes_slug_format", sql`${t.slug} ~ '^[a-z0-9-]{1,80}$'`),
   ],
 );
 
