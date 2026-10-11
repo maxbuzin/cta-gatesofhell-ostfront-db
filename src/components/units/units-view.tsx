@@ -279,7 +279,7 @@ export function UnitsView({
                         <StatCell value={unit.penetrationMm} label="Pen" group="red" icon="Crosshair" unit="mm" />
                       </TableCell>
                       <TableCell>
-                        <StatCell value={unit.caliberMm} label="Caliber" group="pink" icon="CircleDot" unit="mm" direction="neutral" />
+                        <StatCell value={unit.caliberMm} label="Caliber" group="pink" icon="CircleDot" unit="mm" direction="higher" />
                       </TableCell>
                       <TableCell>
                         <StatCell value={unit.rangeM} label="Range" group="blue" icon="Ruler" unit="m" />

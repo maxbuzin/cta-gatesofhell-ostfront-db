@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { getFactions, getResearchTree } from "@/lib/db/queries/units";
-import { FACTION_COLORS } from "@/lib/stats/definitions";
+import { FACTIONS, FACTION_COLORS } from "@/lib/factions";
 import { cn } from "@/lib/utils";
 import { ResearchTreeClient } from "@/components/research/research-tree-client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 type Props = { params: Promise<{ faction: string }> };
 
 export function generateStaticParams() {
-  return Object.keys(FACTION_COLORS).map((faction) => ({ faction }));
+  return FACTIONS.map((f) => ({ faction: f.slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -27,12 +27,13 @@ async function ResearchContent({ params }: Props) {
 
   const tabs =
     factions.length > 0
-      ? factions
-      : Object.keys(FACTION_COLORS).map((slug) => ({
-          slug,
-          nameEn: slug,
-          color: FACTION_COLORS[slug],
-        }));
+      ? factions.map((f) => ({
+          slug: f.slug,
+          nameEn:
+            FACTIONS.find((d) => d.slug === f.slug)?.nameEn || f.nameEn,
+          color: f.color,
+        }))
+      : FACTIONS;
 
   return (
     <div className="mx-auto max-w-7xl space-y-4">

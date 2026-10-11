@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { FACTION_COLORS } from "@/lib/stats/definitions";
+import { FACTIONS, FACTION_COLORS } from "@/lib/factions";
 
 const SPECIALTIES = [
   { slug: "anti-tank", name: "Anti-Tank" },
@@ -78,11 +78,16 @@ export function FilterPanel({ factions }: { factions: FactionOpt[] }) {
 
   const factionOpts =
     factions.length > 0
-      ? factions
-      : Object.keys(FACTION_COLORS).map((slug) => ({
-          slug,
-          nameEn: slug,
-          color: FACTION_COLORS[slug],
+      ? factions.map((f) => ({
+          slug: f.slug,
+          nameEn:
+            FACTIONS.find((d) => d.slug === f.slug)?.nameEn || f.nameEn,
+          color: f.color,
+        }))
+      : FACTIONS.map((f) => ({
+          slug: f.slug,
+          nameEn: f.nameEn,
+          color: f.color,
         }));
 
   return (

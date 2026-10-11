@@ -1,8 +1,10 @@
 import Link from "next/link";
 import {
   Bomb,
+  BrickWall,
   Car,
-  Crosshair,
+  Container,
+  Focus,
   Radar,
   Rocket,
   Target,
@@ -17,39 +19,40 @@ import {
   getUnitCountsByType,
 } from "@/lib/db/queries/units";
 import { EmptyState } from "@/components/units/empty-state";
-import { FACTION_COLORS } from "@/lib/stats/definitions";
+import { FACTIONS, FACTION_COLORS } from "@/lib/factions";
+import { FactionChips } from "@/components/layout/faction-chips";
 import { HomeSearch } from "@/components/home/home-search";
 
 const TYPE_ICONS: Record<string, LucideIcon> = {
-  tank: Crosshair,
+  tank: Container,
   tank_destroyer: Target,
   spg: Target,
   armored_car: Car,
   light_vehicle: Car,
   support_vehicle: Truck,
   truck: Truck,
-  at_gun: Crosshair,
+  at_gun: Focus,
   aa_gun: Radar,
   artillery: Bomb,
   mortar: Rocket,
   rocket: Rocket,
-  mg_emplacement: Crosshair,
+  mg_emplacement: BrickWall,
   infantry_squad: Users,
   infantry_unit: Users,
 };
 
-const TILE_ORDER = [
-  "tank",
-  "tank_destroyer",
-  "armored_car",
-  "support_vehicle",
-  "at_gun",
-  "aa_gun",
-  "artillery",
-  "mortar",
-  "mg_emplacement",
-  "infantry_squad",
-];
+const TILES = [
+  { code: "tank", label: "Tanks" },
+  { code: "tank_destroyer", label: "Tank Destroyers & SPG" },
+  { code: "armored_car", label: "Armored Cars & Light Vehicles" },
+  { code: "support_vehicle", label: "Support Vehicles & Trucks" },
+  { code: "at_gun", label: "AT Guns" },
+  { code: "aa_gun", label: "AA Guns" },
+  { code: "artillery", label: "Artillery" },
+  { code: "mortar", label: "Mortars & Rockets" },
+  { code: "mg_emplacement", label: "MG Emplacements" },
+  { code: "infantry_squad", label: "Infantry" },
+] as const;
 
 export default async function HomePage() {
   const [counts, factions, popular, version] = await Promise.all([
@@ -60,19 +63,11 @@ export default async function HomePage() {
   ]);
 
   const countMap = new Map(counts.map((c) => [c.code, c]));
-  const tiles = TILE_ORDER.map((code) => {
-    const row = countMap.get(code);
-    return {
-      code,
-      label:
-        row?.nameEn ||
-        code
-          .split("_")
-          .map((w) => w[0].toUpperCase() + w.slice(1))
-          .join(" "),
-      count: row?.count ?? 0,
-    };
-  });
+  const tiles = TILES.map((tile) => ({
+    ...tile,
+    count: countMap.get(tile.code)?.count ?? 0,
+    label: countMap.get(tile.code)?.nameEn || tile.label,
+  }));
 
   return (
     <div className="mx-auto max-w-6xl space-y-12">
@@ -86,27 +81,25 @@ export default async function HomePage() {
             units, compare stats, explore Conquest research.
           </p>
           <HomeSearch />
-          <div className="flex flex-wrap justify-center gap-2 pt-2">
-            {(factions.length
-              ? factions
-              : Object.entries(FACTION_COLORS).map(([slug, color]) => ({
-                  slug,
-                  nameEn: slug,
-                  color,
-                }))
-            ).map((f) => (
-              <Link
-                key={f.slug}
-                href={`/units?faction=${f.slug}`}
-                className="rounded-md border border-border px-3 py-1.5 text-sm transition-colors duration-150 hover:border-primary"
-                style={{
-                  borderColor: f.color || FACTION_COLORS[f.slug],
-                }}
-              >
-                {f.nameEn}
-              </Link>
-            ))}
-          </div>
+          {factions.length > 0 ? (
+            <div className="flex flex-wrap justify-center gap-2 pt-2">
+              {factions.map((f) => (
+                <Link
+                  key={f.slug}
+                  href={`/units?faction=${f.slug}`}
+                  className="rounded-md border border-border px-3 py-1.5 text-sm transition-colors duration-150 hover:border-primary"
+                  style={{
+                    borderColor:
+                      f.color || FACTION_COLORS[f.slug] || undefined,
+                  }}
+                >
+                  {FACTIONS.find((d) => d.slug === f.slug)?.nameEn || f.nameEn}
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <FactionChips className="justify-center pt-2" size="md" />
+          )}
         </div>
       </section>
 
@@ -114,7 +107,7 @@ export default async function HomePage() {
         <h2 className="page-title text-2xl md:text-3xl">Categories</h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           {tiles.map((tile) => {
-            const Icon = TYPE_ICONS[tile.code] || Crosshair;
+            const Icon = TYPE_ICONS[tile.code] || Container;
             return (
               <Link
                 key={tile.code}

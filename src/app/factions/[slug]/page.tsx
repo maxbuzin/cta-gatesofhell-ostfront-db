@@ -8,14 +8,14 @@ import {
   getFactions,
 } from "@/lib/db/queries/units";
 import { EmptyState } from "@/components/units/empty-state";
-import { FACTION_COLORS } from "@/lib/stats/definitions";
+import { FACTIONS, FACTION_COLORS } from "@/lib/factions";
 import { FactionChart } from "@/components/factions/faction-chart";
 import { Skeleton } from "@/components/ui/skeleton";
 
 type Props = { params: Promise<{ slug: string }> };
 
 export function generateStaticParams() {
-  return Object.keys(FACTION_COLORS).map((slug) => ({ slug }));
+  return FACTIONS.map((f) => ({ slug: f.slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -27,15 +27,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 async function FactionContent({ params }: Props) {
   const { slug } = await params;
   const factions = await getFactions();
+  const fallback = FACTIONS.find((f) => f.slug === slug);
   const faction =
     (await getFactionBySlug(slug)) ||
-    (factions.length === 0 && FACTION_COLORS[slug]
+    (factions.length === 0 && fallback
       ? {
           id: 0,
-          slug,
-          nameEn: slug,
+          slug: fallback.slug,
+          nameEn: fallback.nameEn,
           namePt: null,
-          color: FACTION_COLORS[slug],
+          color: fallback.color,
           sortOrder: 0,
           strengths: null,
           weaknesses: null,

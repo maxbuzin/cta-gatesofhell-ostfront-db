@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { FACTION_COLORS } from "@/lib/stats/definitions";
+import { FACTION_COLORS } from "@/lib/factions";
 
 export function FactionBadge({
   slug,

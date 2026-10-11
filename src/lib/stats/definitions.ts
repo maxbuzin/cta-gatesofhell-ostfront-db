@@ -82,7 +82,7 @@ export const STATS = {
     key: "caliberMm",
     label: "Caliber",
     group: "pink",
-    direction: "neutral",
+    direction: "higher",
     unit: "mm",
     icon: "CircleDot",
     family: "Firepower",
@@ -152,28 +152,7 @@ export const STATS = {
   },
 } as const satisfies Record<string, StatDef>;
 
-export const FACTION_COLORS: Record<string, string> = {
-  germany: "#5E6B73",
-  ussr: "#B23A2F",
-  usa: "#4A6B3A",
-  british: "#A8834A",
-  "british-commonwealth": "#A8834A",
-  finland: "#3E6FA8",
-  japan: "#C9C2B0",
-};
-
-export const UNIT_TYPE_TILES = [
-  { code: "tank", label: "Tanks", icon: "Tank" },
-  { code: "tank_destroyer", label: "Tank Destroyers & SPG", icon: "Crosshair" },
-  { code: "armored_car", label: "Armored Cars & Light Vehicles", icon: "Car" },
-  { code: "support_vehicle", label: "Support Vehicles & Trucks", icon: "Truck" },
-  { code: "at_gun", label: "AT Guns", icon: "Target" },
-  { code: "aa_gun", label: "AA Guns", icon: "Radar" },
-  { code: "artillery", label: "Artillery", icon: "Bomb" },
-  { code: "mortar", label: "Mortars & Rockets", icon: "Rocket" },
-  { code: "mg_emplacement", label: "MG Emplacements", icon: " fort" },
-  { code: "infantry_squad", label: "Infantry", icon: "Users" },
-] as const;
+export { FACTION_COLORS, FACTIONS } from "@/lib/factions";
 
 /** Intensity 0 (worst) to 1 (best) for a value in a cohort. */
 export function gradeIntensity(

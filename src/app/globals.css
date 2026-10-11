@@ -151,10 +151,6 @@
   }
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    background-image:
-      radial-gradient(ellipse 120% 80% at 10% -20%, color-mix(in srgb, var(--primary) 12%, transparent), transparent),
-      radial-gradient(ellipse 80% 60% at 90% 0%, color-mix(in srgb, var(--brass) 8%, transparent), transparent);
-    background-attachment: fixed;
   }
   html {
     @apply scroll-smooth;
