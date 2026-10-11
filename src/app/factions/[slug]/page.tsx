@@ -12,6 +12,8 @@ import { FACTIONS, FACTION_COLORS } from "@/lib/factions";
 import { safeCssColor } from "@/lib/safe-css-color";
 import { FactionChart } from "@/components/factions/faction-chart";
 import { Skeleton } from "@/components/ui/skeleton";
+import { withQueryFallback } from "@/lib/safe-query";
+import { isKnownFactionSlug } from "@/lib/faction-slug";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -21,16 +23,32 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const faction = await getFactionBySlug(slug);
+  if (!isKnownFactionSlug(slug)) {
+    return { title: "Faction not found" };
+  }
+  const faction = await withQueryFallback(
+    () => getFactionBySlug(slug),
+    null,
+    "Failed to load faction metadata",
+  );
   return { title: faction ? faction.nameEn : slug };
 }
 
 async function FactionContent({ params }: Props) {
   const { slug } = await params;
-  const factions = await getFactions();
+  if (!isKnownFactionSlug(slug)) notFound();
+  const factions = await withQueryFallback(
+    () => getFactions(),
+    [],
+    "Failed to load factions",
+  );
   const fallback = FACTIONS.find((f) => f.slug === slug);
   const faction =
-    (await getFactionBySlug(slug)) ||
+    (await withQueryFallback(
+      () => getFactionBySlug(slug),
+      null,
+      "Failed to load faction",
+    )) ||
     (factions.length === 0 && fallback
       ? {
           id: 0,
@@ -47,7 +65,13 @@ async function FactionContent({ params }: Props) {
   if (!faction) notFound();
 
   const counts =
-    faction.id > 0 ? await getFactionUnitCounts(faction.id) : [];
+    faction.id > 0
+      ? await withQueryFallback(
+          () => getFactionUnitCounts(faction.id),
+          [],
+          "Failed to load faction unit counts",
+        )
+      : [];
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">

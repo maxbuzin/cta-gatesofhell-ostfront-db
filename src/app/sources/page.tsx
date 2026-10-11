@@ -3,13 +3,18 @@ import { getSourcesList } from "@/lib/db/queries/units";
 import { EmptyState } from "@/components/units/empty-state";
 import { safeUrl } from "@/lib/safe";
 import { Button } from "@/components/ui/button";
+import { withQueryFallback } from "@/lib/safe-query";
 
 export const metadata: Metadata = {
   title: "Sources & Credits",
 };
 
 export default async function SourcesPage() {
-  const sources = await getSourcesList();
+  const sources = await withQueryFallback(
+    () => getSourcesList(),
+    [],
+    "Failed to load sources",
+  );
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">

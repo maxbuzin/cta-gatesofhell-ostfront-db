@@ -16,6 +16,10 @@ const routes = [
   ['about', '/about'],
   ['404', '/this-page-does-not-exist-xyz'],
 ];
+
+/** Routes where sidebar full-column height must be visible in full-page shots */
+const tallRoutes = new Set(['units', 'unit-detail', 'research']);
+
 const viewports = [
   ['desktop', { width: 1440, height: 900 }],
   ['mobile', { width: 390, height: 844 }],
@@ -31,12 +35,23 @@ for (const [vpName, vp] of viewports) {
   await page.setViewportSize(vp);
   for (const theme of themes) {
     for (const [name, urlPath] of routes) {
-      await page.goto('http://localhost:3000' + urlPath, { waitUntil: 'networkidle', timeout: 30000 });
+      await page.goto('http://localhost:3000' + urlPath, {
+        waitUntil: 'networkidle',
+        timeout: 30000,
+      });
       await page.evaluate((t) => {
         localStorage.setItem('theme', t);
         if (t === 'light') document.documentElement.classList.remove('dark');
         else document.documentElement.classList.add('dark');
       }, theme);
+      if (tallRoutes.has(name) && vpName === 'desktop') {
+        await page.evaluate(() => {
+          const main = document.querySelector('main');
+          if (main) main.style.minHeight = '2200px';
+          const aside = document.querySelector('aside.bg-sidebar');
+          if (aside) aside.style.minHeight = '2200px';
+        });
+      }
       await page.waitForTimeout(300);
       const file = `${out}/${name}-${vpName}-${theme}.png`;
       await page.screenshot({ path: file, fullPage: true });

@@ -1,5 +1,5 @@
 -- Ostfront DB roles (security-p0 #9)
--- Run as Neon project owner (neondb_owner) AFTER migrations 0000 + 0001 + 0002.
+-- Run as Neon project owner (neondb_owner) AFTER `pnpm db:migrate` (Max machine + DATABASE_URL_OWNER).
 -- Create roles without passwords here. Then set passwords interactively:
 --   \password goh_etl
 --   \password goh_app_ro
@@ -36,6 +36,7 @@ $$;
 
 ALTER ROLE goh_etl CONNECTION LIMIT 5;
 ALTER ROLE goh_etl SET statement_timeout = '60s';
+ALTER ROLE goh_etl SET idle_in_transaction_session_timeout = '60s';
 ALTER ROLE goh_etl SET search_path = public;
 ALTER ROLE goh_etl SET lock_timeout = '1s';
 

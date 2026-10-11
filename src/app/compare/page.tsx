@@ -6,32 +6,29 @@ import { PenetrationChart } from "@/components/units/penetration-chart";
 import { EmptyState } from "@/components/units/empty-state";
 import { ColorLegend } from "@/components/units/color-legend";
 import { Skeleton } from "@/components/ui/skeleton";
-import { z } from "zod";
 import { getUnitsBySlugs } from "@/lib/db/queries/units";
+import { parseCompareUnitSlugs } from "@/lib/compare-params";
 import { safeCssColor } from "@/lib/safe-css-color";
+import { withQueryFallback } from "@/lib/safe-query";
 
 export const metadata: Metadata = {
   title: "Compare",
   robots: { index: false, follow: true },
 };
 
-const unitSlugSchema = z
-  .string()
-  .regex(/^[a-z0-9][a-z0-9-]{0,79}$/);
-
 async function CompareContent({
   searchParams,
 }: {
-  searchParams: Promise<{ units?: string }>;
+  searchParams: Promise<{ units?: string | string[] }>;
 }) {
   const sp = await searchParams;
-  const slugs = (sp.units || "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter((s) => unitSlugSchema.safeParse(s).success)
-    .slice(0, 4);
+  const slugs = parseCompareUnitSlugs(sp.units);
 
-  const units = await getUnitsBySlugs(slugs);
+  const units = await withQueryFallback(
+    () => getUnitsBySlugs(slugs),
+    [],
+    "Failed to load compare units",
+  );
 
   if (units.length === 0) {
     return (
@@ -113,7 +110,7 @@ async function CompareContent({
 export default function ComparePage({
   searchParams,
 }: {
-  searchParams: Promise<{ units?: string }>;
+  searchParams: Promise<{ units?: string | string[] }>;
 }) {
   return (
     <Suspense fallback={<Skeleton className="h-64 w-full" />}>

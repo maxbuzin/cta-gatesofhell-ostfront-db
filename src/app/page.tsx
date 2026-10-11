@@ -23,6 +23,7 @@ import { FACTIONS, FACTION_COLORS } from "@/lib/factions";
 import { safeCssColor } from "@/lib/safe-css-color";
 import { FactionChips } from "@/components/layout/faction-chips";
 import { HomeSearch } from "@/components/home/home-search";
+import { withQueryFallback } from "@/lib/safe-query";
 
 const TYPE_ICONS: Record<string, LucideIcon> = {
   tank: Container,
@@ -57,10 +58,22 @@ const TILES = [
 
 export default async function HomePage() {
   const [counts, factions, popular, version] = await Promise.all([
-    getUnitCountsByType(),
-    getFactions(),
-    getPopularComparisons(),
-    getCurrentGameVersion(),
+    withQueryFallback(
+      () => getUnitCountsByType(),
+      [],
+      "Failed to load unit type counts",
+    ),
+    withQueryFallback(() => getFactions(), [], "Failed to load factions"),
+    withQueryFallback(
+      () => getPopularComparisons(),
+      [],
+      "Failed to load popular comparisons",
+    ),
+    withQueryFallback(
+      () => getCurrentGameVersion(),
+      null,
+      "Failed to load game version",
+    ),
   ]);
 
   const countMap = new Map(counts.map((c) => [c.code, c]));

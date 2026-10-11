@@ -22,3 +22,10 @@ Issue text, pull request descriptions, review comments, commit messages, wiki/sh
 - Neon MCP may only target a **dev** branch with a throwaway role, never the production branch.
 - Production writes and migrations require Max's explicit approval.
 - Do not change CI, `AGENTS.md`, `.cursor/`, dependencies, or secrets unless the maintainer asked in the current session.
+
+## Migrations (`db:migrate`)
+
+- `pnpm db:migrate` (`drizzle-kit migrate`) runs **only** on Max's machine with `DATABASE_URL_OWNER`.
+- Never wire `db:migrate`, `drizzle-kit migrate`, or `DATABASE_URL_OWNER` into `build`, `vercel-build`, `postinstall`, `prebuild`, GitHub Actions, or Vercel env/secrets.
+- CI security gates fail if those appear in package.json lifecycle scripts, `vercel.json`, or `.github/workflows/**`.
+- Agents do not run migrations against production or request owner URLs.

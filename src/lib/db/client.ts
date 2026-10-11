@@ -15,12 +15,8 @@ export function getDb(): Db | null {
   if (dbInstance) return dbInstance;
   const url = getEnv().DATABASE_URL;
   if (!url) return null;
-  try {
-    const sql = neon(url);
-    dbInstance = drizzle(sql, { schema });
-    return dbInstance;
-  } catch {
-    console.error("Database connection failed");
-    return null;
-  }
+  // Do not swallow connection errors — callers outside `'use cache'` catch them.
+  const sql = neon(url);
+  dbInstance = drizzle(sql, { schema });
+  return dbInstance;
 }

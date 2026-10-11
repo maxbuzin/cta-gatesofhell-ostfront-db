@@ -287,6 +287,15 @@ export const unitStats = pgTable(
   (t) => [
     uniqueIndex("unit_stats_unit_version_uq").on(t.unitId, t.gameVersionId),
     index("unit_stats_version_idx").on(t.gameVersionId),
+    check("unit_stats_nonneg_hp", sql`${t.hp} IS NULL OR ${t.hp} >= 0`),
+    check(
+      "unit_stats_nonneg_armor",
+      sql`${t.armorFrontMm} IS NULL OR ${t.armorFrontMm} >= 0`,
+    ),
+    check(
+      "unit_stats_nonneg_pen",
+      sql`${t.penetrationMm} IS NULL OR ${t.penetrationMm} >= 0`,
+    ),
   ],
 );
 
@@ -313,6 +322,7 @@ export const unitCosts = pgTable(
       t.kind,
     ),
     index("unit_costs_version_mode_idx").on(t.gameVersionId, t.gameMode),
+    check("unit_costs_nonneg_amount", sql`${t.amount} >= 0`),
   ],
 );
 

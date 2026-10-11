@@ -31,6 +31,8 @@ import { getUnitBySlug } from "@/lib/db/queries/units";
 import { formatStat } from "@/lib/safe";
 import { ColorLegend } from "@/components/units/color-legend";
 import { Skeleton } from "@/components/ui/skeleton";
+import { withQueryFallback } from "@/lib/safe-query";
+import { safeCssColor } from "@/lib/safe-css-color";
 
 const unitSlugSchema = z
   .string()
@@ -59,7 +61,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!unitSlugSchema.safeParse(slug).success) {
     return { title: "Unit not found" };
   }
-  const unit = await getUnitBySlug(slug);
+  const unit = await withQueryFallback(
+    () => getUnitBySlug(slug),
+    null,
+    "Failed to load unit metadata",
+  );
   if (!unit) return { title: "Unit not found" };
   return {
     title: `${unit.name} – ${unit.factionName} ${unit.typeName}`,
@@ -71,7 +77,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 async function UnitDetailContent({ params }: Props) {
   const { slug } = await params;
   if (!unitSlugSchema.safeParse(slug).success) notFound();
-  const unit = await getUnitBySlug(slug);
+  const unit = await withQueryFallback(
+    () => getUnitBySlug(slug),
+    null,
+    "Failed to load unit",
+  );
   if (!unit) notFound();
 
   const cp = unit.costs.find((c) => c.kind === "cp")?.amount ?? null;
@@ -98,19 +108,23 @@ async function UnitDetailContent({ params }: Props) {
     ),
   ].sort((a, b) => a - b);
 
+  // Index keys only (u0, u1, …) — ChartStyle allowlists /^u[0-9]+$/.
+  const ammoEntries = [...penByAmmo.entries()];
   const chartData = ranges.map((rangeM) => {
     const row: { rangeM: number } & Record<string, number> = { rangeM };
-    for (const [id, ammo] of penByAmmo) {
+    ammoEntries.forEach(([, ammo], i) => {
       const pt = ammo.points.find((p) => p.rangeM === rangeM);
-      if (pt) row[`a${id}`] = pt.mm;
-    }
+      if (pt) row[`u${i}`] = pt.mm;
+    });
     return row;
   });
 
-  const series = [...penByAmmo.entries()].map(([id, ammo], i) => ({
-    key: `a${id}`,
+  const series = ammoEntries.map(([, ammo], i) => ({
+    key: `u${i}`,
     label: ammo.name,
-    color: ["#c0443a", "#d4a43a", "#3e6fa8", "#7a8b5c"][i % 4],
+    color: safeCssColor(
+      ["#c0443a", "#d4a43a", "#3e6fa8", "#7a8b5c"][i % 4],
+    ),
   }));
 
   return (

@@ -12,6 +12,7 @@ import {
   getCurrentGameVersion,
   getSearchIndex,
 } from "@/lib/db/queries/units";
+import { withQueryFallback } from "@/lib/safe-query";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -50,8 +51,12 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const [searchIndex, gameVersion] = await Promise.all([
-    getSearchIndex(),
-    getCurrentGameVersion(),
+    withQueryFallback(() => getSearchIndex(), [], "Failed to load search index"),
+    withQueryFallback(
+      () => getCurrentGameVersion(),
+      null,
+      "Failed to load game version",
+    ),
   ]);
 
   return (

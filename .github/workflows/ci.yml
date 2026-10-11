@@ -45,8 +45,8 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
-      - name: Unit tests (safe CSS)
-        run: node --experimental-strip-types --test scripts/test-safe-css-color.mjs
+      - name: Unit tests
+        run: pnpm test
 
       - name: Security text gates
         run: node scripts/ci-security-gates.mjs prebuild

@@ -6,6 +6,9 @@ import { FACTIONS } from "@/lib/factions";
 import { cn } from "@/lib/utils";
 import { ResearchTreeClient } from "@/components/research/research-tree-client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { withQueryFallback } from "@/lib/safe-query";
+import { isKnownFactionSlug } from "@/lib/faction-slug";
+import { notFound } from "next/navigation";
 
 type Props = { params: Promise<{ faction: string }> };
 
@@ -15,14 +18,23 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { faction } = await params;
+  if (!isKnownFactionSlug(faction)) {
+    return { title: "Research not found" };
+  }
   return { title: `Research Tree – ${faction}` };
 }
 
 async function ResearchContent({ params }: Props) {
   const { faction } = await params;
+  if (!isKnownFactionSlug(faction)) notFound();
+  const emptyTree = { nodes: [], edges: [], faction: null };
   const [factions, tree] = await Promise.all([
-    getFactions(),
-    getResearchTree(faction),
+    withQueryFallback(() => getFactions(), [], "Failed to load factions"),
+    withQueryFallback(
+      () => getResearchTree(faction),
+      emptyTree,
+      "Failed to load research tree",
+    ),
   ]);
 
   const tabs =

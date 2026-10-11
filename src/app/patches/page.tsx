@@ -3,13 +3,18 @@ import { getGameVersions } from "@/lib/db/queries/units";
 import { EmptyState } from "@/components/units/empty-state";
 import { formatStat } from "@/lib/safe";
 import { safeUrl } from "@/lib/safe";
+import { withQueryFallback } from "@/lib/safe-query";
 
 export const metadata: Metadata = {
   title: "Patch Notes",
 };
 
 export default async function PatchesPage() {
-  const versions = await getGameVersions();
+  const versions = await withQueryFallback(
+    () => getGameVersions(),
+    [],
+    "Failed to load game versions",
+  );
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
