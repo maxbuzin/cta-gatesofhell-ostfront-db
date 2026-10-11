@@ -24,17 +24,39 @@ describe("env preview vs production", () => {
     }
   });
 
-  it("treats Vercel preview as non-production (no DB required)", () => {
+  it("allows Vercel preview without DATABASE_URL (empty states)", () => {
     process.env.NODE_ENV = "production";
     process.env.VERCEL_ENV = "preview";
     delete process.env.NEXT_PHASE;
     assert.equal(isProductionRuntime(), false);
+  });
+
+  it("rejects owner / non-goh_app_ro URLs on Vercel preview", () => {
+    process.env.NODE_ENV = "production";
+    process.env.VERCEL_ENV = "preview";
+    delete process.env.NEXT_PHASE;
+    assert.throws(
+      () =>
+        assertProductionDatabaseUrl(
+          "postgres://neondb_owner@ep-x.us-east-1.aws.neon.tech/neondb",
+        ),
+      /goh_app_ro|owner/,
+    );
+    assert.throws(
+      () =>
+        assertProductionDatabaseUrl(
+          "postgres://other@ep-x-pooler.us-east-1.aws.neon.tech/neondb",
+        ),
+      /goh_app_ro/,
+    );
     assert.doesNotThrow(() =>
-      assertProductionDatabaseUrl("postgres://x@host/db"),
+      assertProductionDatabaseUrl(
+        "postgres://goh_app_ro@ep-x-pooler.us-east-1.aws.neon.tech/neondb",
+      ),
     );
   });
 
-  it("treats Vercel production as strict", () => {
+  it("treats Vercel production as strict (user + pooler)", () => {
     process.env.NODE_ENV = "production";
     process.env.VERCEL_ENV = "production";
     delete process.env.NEXT_PHASE;
@@ -44,7 +66,14 @@ describe("env preview vs production", () => {
         assertProductionDatabaseUrl(
           "postgres://neondb_owner@ep-x.us-east-1.aws.neon.tech/neondb",
         ),
-      /pooler|goh_app_ro/,
+      /goh_app_ro|owner|pooler/,
+    );
+    assert.throws(
+      () =>
+        assertProductionDatabaseUrl(
+          "postgres://goh_app_ro@ep-x.us-east-1.aws.neon.tech/neondb",
+        ),
+      /pooler/,
     );
     assert.doesNotThrow(() =>
       assertProductionDatabaseUrl(
@@ -58,5 +87,14 @@ describe("env preview vs production", () => {
     process.env.VERCEL_ENV = "production";
     process.env.NEXT_PHASE = "phase-production-build";
     assert.equal(isProductionRuntime(), false);
+    // Build phase is not preview/production deploy enforcement for pooler,
+    // but VERCEL_ENV=production still blocks owner users.
+    assert.throws(
+      () =>
+        assertProductionDatabaseUrl(
+          "postgres://neondb_owner@ep-x.us-east-1.aws.neon.tech/neondb",
+        ),
+      /goh_app_ro|owner/,
+    );
   });
 });

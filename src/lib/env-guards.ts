@@ -13,22 +13,46 @@ export function isProductionRuntime(): boolean {
   );
 }
 
-/** Production DATABASE_URL must be pooled Neon + goh_app_ro. */
+function isVercelPreviewOrProduction(): boolean {
+  return (
+    process.env.VERCEL_ENV === "preview" ||
+    process.env.VERCEL_ENV === "production"
+  );
+}
+
+/**
+ * When a DATABASE_URL is present on Vercel preview/production (or production
+ * runtime), reject owner / non-RO users. Production also requires the pooler.
+ * Missing DATABASE_URL on preview remains allowed (empty states).
+ */
 export function assertProductionDatabaseUrl(url: string): void {
-  if (!isProductionRuntime()) return;
+  const enforceUser =
+    isVercelPreviewOrProduction() || isProductionRuntime();
+  const enforcePooler = isProductionRuntime();
+  if (!enforceUser && !enforcePooler) return;
+
   let parsed: URL;
   try {
     parsed = new URL(url);
   } catch {
     throw new Error("DATABASE_URL is not a valid URL");
   }
-  const host = parsed.hostname;
-  if (!host.includes("-pooler.") && !host.includes(".pooler.")) {
-    throw new Error(
-      "DATABASE_URL must use the Neon pooler host in production (…-pooler…)",
-    );
+
+  if (enforceUser) {
+    const user = decodeURIComponent(parsed.username || "");
+    if (user === "neondb_owner" || user !== "goh_app_ro") {
+      throw new Error(
+        "DATABASE_URL user must be goh_app_ro (owner URLs are not allowed on Vercel preview/production)",
+      );
+    }
   }
-  if (parsed.username !== "goh_app_ro") {
-    throw new Error("DATABASE_URL user must be goh_app_ro in production");
+
+  if (enforcePooler) {
+    const host = parsed.hostname;
+    if (!host.includes("-pooler.") && !host.includes(".pooler.")) {
+      throw new Error(
+        "DATABASE_URL must use the Neon pooler host in production (…-pooler…)",
+      );
+    }
   }
 }

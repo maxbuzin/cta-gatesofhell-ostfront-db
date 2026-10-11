@@ -9,14 +9,26 @@ import {
   rowAfterCursor,
 } from "../src/lib/db/keyset-cursor.ts";
 
+function craftCursor(payload) {
+  return Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
+}
+
 describe("decodeCursor", () => {
-  it("accepts valid cursor matching sort key", () => {
+  it("accepts valid cursor matching sort key and value type", () => {
     const raw = encodeCursor({ id: 3, v: 10, k: "hp_asc" });
     assert.deepEqual(decodeCursor(raw, "hp_asc"), {
       id: 3,
       v: 10,
       k: "hp_asc",
     });
+    assert.deepEqual(
+      decodeCursor(encodeCursor({ id: 1, v: "tiger", k: "name_asc" }), "name_asc"),
+      { id: 1, v: "tiger", k: "name_asc" },
+    );
+    assert.deepEqual(
+      decodeCursor(encodeCursor({ id: 9, v: null, k: "pen_desc" }), "pen_desc"),
+      { id: 9, v: null, k: "pen_desc" },
+    );
   });
 
   it("rejects mismatched sort, bad payload, or wrong value type → page 1", () => {
@@ -24,10 +36,31 @@ describe("decodeCursor", () => {
     assert.equal(decodeCursor(raw, "hp_desc"), null);
     assert.equal(decodeCursor("not-base64", "hp_asc"), null);
     assert.equal(
-      decodeCursor(encodeCursor({ id: 1, v: 5, k: "name_asc" }), "name_asc"),
+      decodeCursor(craftCursor({ id: 1, v: 5, k: "name_asc" }), "name_asc"),
       null,
     ); // name requires string v — number fails
+    assert.equal(
+      decodeCursor(craftCursor({ id: 1, v: null, k: "name_asc" }), "name_asc"),
+      null,
+    ); // name is NOT NULL
     assert.equal(decodeCursor(undefined, "name_asc"), null);
+  });
+
+  it("rejects crafted text cursor values for numeric sorts (never reach Postgres)", () => {
+    const crafted = craftCursor({
+      id: 1,
+      v: "1); DROP TABLE units;--",
+      k: "hp_asc",
+    });
+    assert.equal(decodeCursor(crafted, "hp_asc"), null);
+    assert.equal(
+      decodeCursor(craftCursor({ id: 2, v: "50", k: "armor_desc" }), "armor_desc"),
+      null,
+    ); // numeric string is still wrong type
+    assert.equal(
+      decodeCursor(craftCursor({ id: 3, v: true, k: "speed_asc" }), "speed_asc"),
+      null,
+    );
   });
 });
 
@@ -52,7 +85,6 @@ describe("NULLS LAST keyset paging", () => {
       [2, 3, 1, 4, 5],
     );
 
-    // Cursor after id=3 (hp=50): remaining should be 100, then nulls
     const cursor = { id: 3, v: 50, k: "hp_asc" };
     const pred = describeKeysetPredicate("asc", cursor);
     assert.equal(pred.mode, "value-page");
@@ -90,8 +122,6 @@ describe("NULLS LAST keyset paging", () => {
       (r) => r.hp,
       (r) => r.id,
     ).filter((r) => rowAfterCursor("desc", cursorVal, r.hp, r.id));
-    // DESC NULLS LAST order: 100, 50(id3), 50(id2), null(id5), null(id4)
-    // After (50, id2): nulls only (100 and 50/id3 already passed)
     assert.ok(afterVal.every((r) => r.hp === null));
 
     const cursorNull = { id: 5, v: null, k: "hp_desc" };
