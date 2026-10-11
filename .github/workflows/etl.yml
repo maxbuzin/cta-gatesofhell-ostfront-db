@@ -1,0 +1,33 @@
+name: ETL
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+    inputs:
+      patch:
+        description: "Game version code"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  etl:
+    name: Run ETL (stub)
+    runs-on: ubuntu-latest
+    environment: production-data
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Stub notice
+        env:
+          PATCH: ${{ inputs.patch }}
+        run: |
+          echo "ETL pipeline is not implemented in v1."
+          echo "When ready, use DATABASE_URL_ETL from this environment only."
+          if [ -n "${PATCH}" ]; then
+            echo "Requested patch=${PATCH}"
+          fi

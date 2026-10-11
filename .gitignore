@@ -30,12 +30,22 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files
 .env*
+!.env.example
 
-# vercel
+# neon / vercel local
+.neon
 .vercel
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# etl raw cache
+/data/raw/
+
+# OS / editor
+.idea/
+.vscode/
+*.swp

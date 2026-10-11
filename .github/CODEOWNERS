@@ -1,0 +1,15 @@
+# security-p0 #5
+/.github/ @maxbuzin
+/AGENTS.md @maxbuzin
+/.cursor/ @maxbuzin
+/.cursorrules @maxbuzin
+/CLAUDE.md @maxbuzin
+/package.json @maxbuzin
+/pnpm-lock.yaml @maxbuzin
+/pnpm-workspace.yaml @maxbuzin
+/next.config.ts @maxbuzin
+/proxy.ts @maxbuzin
+/drizzle/ @maxbuzin
+/src/lib/db/ @maxbuzin
+/src/app/api/ @maxbuzin
+/etl/ @maxbuzin
