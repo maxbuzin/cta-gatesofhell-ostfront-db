@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 import { EmptyState } from "@/components/units/empty-state";
+import { safeCssColor } from "@/lib/safe-css-color";
 
 export type PenPoint = {
   rangeM: number;
@@ -34,7 +35,10 @@ export function PenetrationChart({
   }
 
   const config = Object.fromEntries(
-    series.map((s) => [s.key, { label: s.label, color: s.color }]),
+    series.map((s) => [
+      s.key,
+      { label: s.label, color: safeCssColor(s.color) },
+    ]),
   );
 
   return (
@@ -58,7 +62,7 @@ export function PenetrationChart({
               key={s.key}
               type="monotone"
               dataKey={s.key}
-              stroke={s.color}
+              stroke={safeCssColor(s.color)}
               strokeWidth={2}
               dot={false}
               name={s.label}

@@ -17,7 +17,7 @@ export function FactionChart({
   data: { typeCode: string; typeName: string; count: number }[];
 }) {
   const config = {
-    count: { label: "Units", color: "var(--primary)" },
+    u0: { label: "Units", color: "#5f6e47" },
   };
 
   return (

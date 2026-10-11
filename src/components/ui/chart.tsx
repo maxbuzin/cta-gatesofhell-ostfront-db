@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { cn } from "@/lib/utils"
+import { isSafeChartKey, safeCssColor } from "@/lib/safe-css-color"
 import * as RechartsPrimitive from "recharts"
 import type { TooltipValueType } from "recharts"
 
@@ -82,32 +83,35 @@ function ChartContainer({
 
 const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
   const colorConfig = Object.entries(config).filter(
-    ([, config]) => config.theme ?? config.color
+    ([key, item]) => isSafeChartKey(key) && (item.theme ?? item.color)
   )
 
   if (!colorConfig.length) {
     return null
   }
 
+  const cssText = Object.entries(THEMES)
+    .map(([theme, prefix]) => {
+      const lines = colorConfig
+        .map(([key, itemConfig]) => {
+          const raw =
+            itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ??
+            itemConfig.color
+          if (!raw) return null
+          return `  --color-${key}: ${safeCssColor(raw)};`
+        })
+        .filter(Boolean)
+        .join("\n")
+      return `${prefix} [data-chart=${id}] {\n${lines}\n}`
+    })
+    .join("\n")
+
   return (
     <style
+      // Keys must match /^u[0-9]+$/; colors pass through safeCssColor (#rgb/#rrggbb only).
+      // eslint-disable-next-line react/no-danger -- sanitized ChartStyle CSS variables only
       dangerouslySetInnerHTML={{
-        __html: Object.entries(THEMES)
-          .map(
-            ([theme, prefix]) => `
-${prefix} [data-chart=${id}] {
-${colorConfig
-  .map(([key, itemConfig]) => {
-    const color =
-      itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ??
-      itemConfig.color
-    return color ? `  --color-${key}: ${color};` : null
-  })
-  .join("\n")}
-}
-`
-          )
-          .join("\n"),
+        __html: cssText,
       }}
     />
   )
@@ -314,7 +318,9 @@ function ChartLegendContent({
                 <div
                   className="h-2 w-2 shrink-0 rounded-[2px]"
                   style={{
-                    backgroundColor: item.color,
+                    backgroundColor: safeCssColor(
+                      typeof item.color === "string" ? item.color : null,
+                    ),
                   }}
                 />
               )}

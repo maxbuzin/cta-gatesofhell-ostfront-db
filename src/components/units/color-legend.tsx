@@ -1,11 +1,11 @@
 const ITEMS = [
-  { label: "Speed / Reload", color: "var(--stat-green)" },
-  { label: "Armor / HP", color: "var(--stat-yellow)" },
-  { label: "Penetration", color: "var(--stat-red)" },
-  { label: "Caliber", color: "var(--stat-pink)" },
-  { label: "Range", color: "var(--stat-blue)" },
-  { label: "Costs", color: "var(--stat-gray)" },
-  { label: "Other", color: "var(--stat-purple)" },
+  { label: "Speed / Reload", color: "#4a7c4a" },
+  { label: "Armor / HP", color: "#c9a227" },
+  { label: "Penetration", color: "#c0443a" },
+  { label: "Caliber", color: "#c45a8a" },
+  { label: "Range", color: "#3e6fa8" },
+  { label: "Costs", color: "#6b6b6b" },
+  { label: "Other", color: "#7a5c9e" },
 ];
 
 export function ColorLegend() {

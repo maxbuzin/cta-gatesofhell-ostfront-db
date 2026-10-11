@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { FACTIONS } from "@/lib/factions";
+import { safeCssColor } from "@/lib/safe-css-color";
 import { cn } from "@/lib/utils";
 
 export function FactionChips({
@@ -27,7 +28,7 @@ export function FactionChips({
               ? "px-1.5 py-0.5 text-[11px] leading-tight"
               : "px-3 py-1.5 text-sm",
           )}
-          style={{ borderColor: f.color }}
+          style={{ borderColor: safeCssColor(f.color) }}
         >
           {f.nameEn}
         </Link>

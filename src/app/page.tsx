@@ -20,6 +20,7 @@ import {
 } from "@/lib/db/queries/units";
 import { EmptyState } from "@/components/units/empty-state";
 import { FACTIONS, FACTION_COLORS } from "@/lib/factions";
+import { safeCssColor } from "@/lib/safe-css-color";
 import { FactionChips } from "@/components/layout/faction-chips";
 import { HomeSearch } from "@/components/home/home-search";
 
@@ -89,8 +90,9 @@ export default async function HomePage() {
                   href={`/units?faction=${f.slug}`}
                   className="rounded-md border border-border px-3 py-1.5 text-sm transition-colors duration-150 hover:border-primary"
                   style={{
-                    borderColor:
-                      f.color || FACTION_COLORS[f.slug] || undefined,
+                    borderColor: safeCssColor(
+                      f.color || FACTION_COLORS[f.slug],
+                    ),
                   }}
                 >
                   {FACTIONS.find((d) => d.slug === f.slug)?.nameEn || f.nameEn}

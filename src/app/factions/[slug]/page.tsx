@@ -9,6 +9,7 @@ import {
 } from "@/lib/db/queries/units";
 import { EmptyState } from "@/components/units/empty-state";
 import { FACTIONS, FACTION_COLORS } from "@/lib/factions";
+import { safeCssColor } from "@/lib/safe-css-color";
 import { FactionChart } from "@/components/factions/faction-chart";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -53,7 +54,9 @@ async function FactionContent({ params }: Props) {
       <div
         className="rounded-md border border-border px-6 py-10 paper-grain"
         style={{
-          borderColor: faction.color || FACTION_COLORS[faction.slug],
+          borderColor: safeCssColor(
+            faction.color || FACTION_COLORS[faction.slug],
+          ),
         }}
       >
         <h1 className="page-title">{faction.nameEn}</h1>

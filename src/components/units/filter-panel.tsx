@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { FACTIONS, FACTION_COLORS } from "@/lib/factions";
+import { safeCssColor } from "@/lib/safe-css-color";
 
 const SPECIALTIES = [
   { slug: "anti-tank", name: "Anti-Tank" },
@@ -116,7 +117,9 @@ export function FilterPanel({ factions }: { factions: FactionOpt[] }) {
             <span
               className="size-2.5 rounded-sm"
               style={{
-                backgroundColor: f.color || FACTION_COLORS[f.slug] || "#7A8B5C",
+                backgroundColor: safeCssColor(
+                  f.color || FACTION_COLORS[f.slug],
+                ),
               }}
               aria-hidden
             />

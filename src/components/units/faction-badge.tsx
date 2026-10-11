@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import { FACTION_COLORS } from "@/lib/factions";
+import { safeCssColor } from "@/lib/safe-css-color";
 
 export function FactionBadge({
   slug,
@@ -12,7 +13,7 @@ export function FactionBadge({
   color?: string | null;
   className?: string;
 }) {
-  const bg = color || FACTION_COLORS[slug] || "#7A8B5C";
+  const bg = safeCssColor(color || FACTION_COLORS[slug]);
   return (
     <span
       className={cn(

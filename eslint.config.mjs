@@ -21,12 +21,8 @@ const eslintConfig = defineConfig([
             "CallExpression[callee.object.name='sql'][callee.property.name='raw']",
           message: "sql.raw is banned (security-p0 #15).",
         },
-        {
-          selector: "JSXAttribute[name.name='dangerouslySetInnerHTML']",
-          message:
-            "dangerouslySetInnerHTML is banned except documented JSON-LD cases (security-p0 #15).",
-        },
       ],
+      "react/no-danger": "error",
       "no-restricted-imports": [
         "error",
         {
@@ -60,13 +56,6 @@ const eslintConfig = defineConfig([
           ],
         },
       ],
-    },
-  },
-  {
-    // shadcn ChartStyle injects theme CSS variables (not user HTML)
-    files: ["src/components/ui/chart.tsx"],
-    rules: {
-      "no-restricted-syntax": "off",
     },
   },
 ]);
