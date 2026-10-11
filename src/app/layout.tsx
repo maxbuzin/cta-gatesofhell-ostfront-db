@@ -56,7 +56,7 @@ export default async function RootLayout({
     <html
       lang="en"
       className={cn(
-        "dark h-full",
+        "h-full",
         inter.variable,
         jetbrains.variable,
         stencil.variable,

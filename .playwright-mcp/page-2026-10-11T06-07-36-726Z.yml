@@ -1,0 +1,130 @@
+- generic [active] [ref=f2e1]:
+  - link "Skip to content" [ref=f2e2] [cursor=pointer]:
+    - /url: "#main"
+  - banner [ref=f2e3]:
+    - generic [ref=f2e4]:
+      - link "OSTFRONT DB" [ref=f2e5] [cursor=pointer]:
+        - /url: /
+      - generic [ref=f2e9]:
+        - textbox "Open search" [ref=f2e11] [cursor=pointer]:
+          - /placeholder: Search units... (Ctrl+K)
+        - generic [ref=f2e12]:
+          - heading "Command Palette" [level=2] [ref=f2e13]
+          - paragraph [ref=f2e14]: Search for a command to run...
+      - generic [ref=f2e15]:
+        - button "Toggle theme" [disabled]
+        - link "GitHub repository" [ref=f2e16] [cursor=pointer]:
+          - /url: https://github.com/maxbuzin/cta-gatesofhell-ostfront-db
+  - generic [ref=f2e17]:
+    - complementary [ref=f2e18]:
+      - button "Collapse sidebar" [ref=f2e20]
+      - navigation "Main" [ref=f2e21]:
+        - link "Home" [ref=f2e22] [cursor=pointer]:
+          - /url: /
+        - link "Units" [ref=f2e27] [cursor=pointer]:
+          - /url: /units
+        - link "Compare" [ref=f2e34] [cursor=pointer]:
+          - /url: /compare
+        - link "Research Tree" [ref=f2e41] [cursor=pointer]:
+          - /url: /research/germany
+        - link "Factions" [ref=f2e48] [cursor=pointer]:
+          - /url: /factions/germany
+        - link "Patch Notes" [ref=f2e52] [cursor=pointer]:
+          - /url: /patches
+        - link "Sources & Credits" [ref=f2e57] [cursor=pointer]:
+          - /url: /sources
+        - link "About" [ref=f2e61] [cursor=pointer]:
+          - /url: /about
+    - main [ref=f2e65]:
+      - generic [ref=f2e66]:
+        - generic [ref=f2e68]:
+          - paragraph [ref=f2e69]: OSTFRONT DB
+          - paragraph [ref=f2e70]: "Turbo spreadsheet for Call to Arms – Gates of Hell: Ostfront. Search units, compare stats, explore Conquest research."
+          - generic [ref=f2e71]:
+            - textbox "Search units" [ref=f2e73]:
+              - /placeholder: "Search any unit: Panther, ZiS-3, Pz IV H..."
+            - button "Search" [ref=f2e74]
+          - generic [ref=f2e75]:
+            - link "germany" [ref=f2e76] [cursor=pointer]:
+              - /url: /units?faction=germany
+            - link "ussr" [ref=f2e77] [cursor=pointer]:
+              - /url: /units?faction=ussr
+            - link "usa" [ref=f2e78] [cursor=pointer]:
+              - /url: /units?faction=usa
+            - link "british" [ref=f2e79] [cursor=pointer]:
+              - /url: /units?faction=british
+            - link "british-commonwealth" [ref=f2e80] [cursor=pointer]:
+              - /url: /units?faction=british-commonwealth
+            - link "finland" [ref=f2e81] [cursor=pointer]:
+              - /url: /units?faction=finland
+            - link "japan" [ref=f2e82] [cursor=pointer]:
+              - /url: /units?faction=japan
+        - generic [ref=f2e83]:
+          - heading "Categories" [level=2] [ref=f2e84]
+          - generic [ref=f2e85]:
+            - link "Tank 0 units" [ref=f2e86] [cursor=pointer]:
+              - /url: /units?type=tank
+              - generic [ref=f2e89]: Tank
+              - generic [ref=f2e90]: 0 units
+            - link "Tank Destroyer 0 units" [ref=f2e91] [cursor=pointer]:
+              - /url: /units?type=tank_destroyer
+              - generic [ref=f2e96]: Tank Destroyer
+              - generic [ref=f2e97]: 0 units
+            - link "Armored Car 0 units" [ref=f2e98] [cursor=pointer]:
+              - /url: /units?type=armored_car
+              - generic [ref=f2e103]: Armored Car
+              - generic [ref=f2e104]: 0 units
+            - link "Support Vehicle 0 units" [ref=f2e105] [cursor=pointer]:
+              - /url: /units?type=support_vehicle
+              - generic [ref=f2e111]: Support Vehicle
+              - generic [ref=f2e112]: 0 units
+            - link "At Gun 0 units" [ref=f2e113] [cursor=pointer]:
+              - /url: /units?type=at_gun
+              - generic [ref=f2e116]: At Gun
+              - generic [ref=f2e117]: 0 units
+            - link "Aa Gun 0 units" [ref=f2e118] [cursor=pointer]:
+              - /url: /units?type=aa_gun
+              - generic [ref=f2e126]: Aa Gun
+              - generic [ref=f2e127]: 0 units
+            - link "Artillery 0 units" [ref=f2e128] [cursor=pointer]:
+              - /url: /units?type=artillery
+              - generic [ref=f2e133]: Artillery
+              - generic [ref=f2e134]: 0 units
+            - link "Mortar 0 units" [ref=f2e135] [cursor=pointer]:
+              - /url: /units?type=mortar
+              - generic [ref=f2e141]: Mortar
+              - generic [ref=f2e142]: 0 units
+            - link "Mg Emplacement 0 units" [ref=f2e143] [cursor=pointer]:
+              - /url: /units?type=mg_emplacement
+              - generic [ref=f2e146]: Mg Emplacement
+              - generic [ref=f2e147]: 0 units
+            - link "Infantry Squad 0 units" [ref=f2e148] [cursor=pointer]:
+              - /url: /units?type=infantry_squad
+              - generic [ref=f2e154]: Infantry Squad
+              - generic [ref=f2e155]: 0 units
+        - generic [ref=f2e156]:
+          - heading "Popular comparisons" [level=2] [ref=f2e157]
+          - generic [ref=f2e158]:
+            - paragraph [ref=f2e159]: No popular comparisons yet
+            - paragraph [ref=f2e160]: Featured matchups will show here once data is curated.
+        - generic [ref=f2e161]:
+          - heading "Latest patch" [level=2] [ref=f2e162]
+          - generic [ref=f2e163]:
+            - paragraph [ref=f2e164]: No patch data yet
+            - paragraph [ref=f2e165]: The current game version will appear after the first import.
+  - contentinfo [ref=f2e166]:
+    - generic [ref=f2e167]:
+      - generic [ref=f2e168]:
+        - paragraph [ref=f2e169]: Game version --
+        - paragraph [ref=f2e170]: Not affiliated with Barbedwire Studios / 1C Entertainment / Digitalmindsoft.
+      - generic [ref=f2e171]:
+        - paragraph [ref=f2e172]:
+          - text: "Data:"
+          - link "CC BY-SA" [ref=f2e173] [cursor=pointer]:
+            - /url: /sources
+          - text: (from community sources / GoH Fandom wiki)
+        - paragraph [ref=f2e174]:
+          - text: "Code:"
+          - link "MIT" [ref=f2e175] [cursor=pointer]:
+            - /url: https://github.com/maxbuzin/cta-gatesofhell-ostfront-db/blob/main/LICENSE
+  - region "Notifications alt+T"

@@ -27,27 +27,46 @@ type CompareContextValue = {
 const CompareContext = createContext<CompareContextValue | null>(null);
 const STORAGE_KEY = "ostfront-compare";
 const MAX = 4;
+const EMPTY: CompareItem[] = [];
 const listeners = new Set<() => void>();
+let cache: CompareItem[] = EMPTY;
+let cacheRaw: string | null = null;
 
 function emit() {
   for (const l of listeners) l();
 }
 
 function readStore(): CompareItem[] {
-  if (typeof window === "undefined") return [];
+  if (typeof window === "undefined") return EMPTY;
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
+    if (raw === cacheRaw) return cache;
+    cacheRaw = raw;
+    if (!raw) {
+      cache = EMPTY;
+      return cache;
+    }
     const parsed = JSON.parse(raw) as CompareItem[];
-    return Array.isArray(parsed) ? parsed.slice(0, MAX) : [];
+    cache = Array.isArray(parsed) ? parsed.slice(0, MAX) : EMPTY;
+    return cache;
   } catch {
-    return [];
+    cache = EMPTY;
+    cacheRaw = null;
+    return EMPTY;
   }
 }
 
+function getServerSnapshot() {
+  return EMPTY;
+}
+
 function writeStore(items: CompareItem[]) {
+  const next = items.slice(0, MAX);
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    const raw = JSON.stringify(next);
+    localStorage.setItem(STORAGE_KEY, raw);
+    cacheRaw = raw;
+    cache = next.length === 0 ? EMPTY : next;
   } catch {
     /* ignore */
   }
@@ -56,11 +75,13 @@ function writeStore(items: CompareItem[]) {
 
 function subscribe(listener: () => void) {
   listeners.add(listener);
-  return () => listeners.delete(listener);
+  return () => {
+    listeners.delete(listener);
+  };
 }
 
 export function CompareProvider({ children }: { children: ReactNode }) {
-  const items = useSyncExternalStore(subscribe, readStore, () => []);
+  const items = useSyncExternalStore(subscribe, readStore, getServerSnapshot);
 
   const add = useCallback((item: CompareItem) => {
     const prev = readStore();
