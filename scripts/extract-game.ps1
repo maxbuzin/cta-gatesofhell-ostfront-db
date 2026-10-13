@@ -470,21 +470,63 @@ foreach ($e in $logic.Entries) {
 }
 Write-Output ("soldiers " + $soldier.Count)
 
+function Parse-Research([string]$raw, [string]$side) {
+  $nodes = @{}
+  $section = $null
+  $inPositions = $false
+  $nodeRx = [regex]'\{(?:\s*tech\s+)?"([^"]+)"\s*requires\s*"([^"]*)"\s*costs\s*([0-9.]+)\s*position\s*(-?[0-9.]+)\s+(-?[0-9.]+)'
+  $posRx = [regex]'\{"([^"]+)"\s+(-?[0-9.]+)\s+(-?[0-9.]+)\s*\}'
+  foreach ($line in ($raw -split '\r?\n')) {
+    $sec = [regex]::Match($line, ';//---(.+?)---')
+    if ($sec.Success) { $section = $sec.Groups[1].Value.Trim(); continue }
+    $trim = $line.Trim()
+    if ($trim.StartsWith(';') -or $trim -eq '') { continue }
+    if ($trim.StartsWith('{positions')) { $inPositions = $true; continue }
+    if ($inPositions) {
+      if ($trim -eq '}') { $inPositions = $false; continue }
+      $pm = $posRx.Match($trim)
+      if ($pm.Success -and -not $nodes.ContainsKey("$side|$($pm.Groups[1].Value)")) {
+        $nodeId = $pm.Groups[1].Value
+        $nodes["$side|$nodeId"] = [ordered]@{
+          id = $nodeId
+          side = $side
+          name = $null
+          tech = $false
+          section = $null
+          requires = @()
+          costs = $null
+          x = Num $pm.Groups[2].Value
+          y = Num $pm.Groups[3].Value
+        }
+      }
+      continue
+    }
+    $clean = Strip-Semi $line
+    $m = $nodeRx.Match($clean)
+    if (-not $m.Success) { continue }
+    $id = $m.Groups[1].Value
+    $nodes["$side|$id"] = [ordered]@{
+      id = $id
+      side = $side
+      name = $null
+      tech = [bool]($clean -match '\{\s*tech\s+"')
+      section = $section
+      requires = @($m.Groups[2].Value.Split(' ') | Where-Object { $_ })
+      costs = Num $m.Groups[3].Value
+      x = Num $m.Groups[4].Value
+      y = Num $m.Groups[5].Value
+    }
+  }
+  return $nodes
+}
+
 Write-Output 'research'
 $research = @{}
 foreach ($e in $logic.Entries) {
   if ($e.FullName -notmatch 'unit_research_([a-z]+)\.set$') { continue }
   $side = $Matches[1]
-  $text = Strip-Semi (Read-ZipText $logic $e.FullName)
-  foreach ($m in [regex]::Matches($text, '\{(?:\s*tech\s+)?"([^"]+)"\s+requires\s+"([^"]*)"\s+costs\s+([0-9.]+)')) {
-    $id = $m.Groups[1].Value
-    $research["$side|$id"] = [ordered]@{
-      id = $id
-      side = $side
-      requires = @($m.Groups[2].Value.Split(' ') | Where-Object { $_ })
-      costs = Num $m.Groups[3].Value
-    }
-  }
+  $parsed = Parse-Research (Read-ZipText $logic $e.FullName) $side
+  foreach ($k in $parsed.Keys) { $research[$k] = $parsed[$k] }
 }
 Write-Output ("research " + $research.Count)
 
@@ -543,6 +585,14 @@ function Lookup-UnitName($id, $side) {
   return $null
 }
 
+function Research-Name($id, $side) {
+  $n = Lookup-Name $id
+  if ($n) { return $n }
+  $base = $id
+  if ($id -match '^(.*)\([a-z]+\)$') { $base = $Matches[1] }
+  return (Lookup-UnitName $base $side)
+}
+
 function Weapon-View($id, $extra) {
   if (-not $id -or -not $weapons.ContainsKey($id)) { return $null }
   $w = $weapons[$id]
@@ -570,6 +620,10 @@ function Weapon-View($id, $extra) {
     }
   }
   return $obj
+}
+
+foreach ($k in @($research.Keys)) {
+  $research[$k].name = Research-Name $research[$k].id $research[$k].side
 }
 
 Write-Output 'units'
@@ -674,10 +728,6 @@ foreach ($e in $logic.Entries) {
     foreach ($rk in @("$side|$id", "$side|$id($side)")) {
       if ($research.ContainsKey($rk)) { $res = $research[$rk]; break }
     }
-    if (-not $res) {
-      $alt = $research.Keys | Where-Object { $_ -like "$side|$id*" } | Select-Object -First 1
-      if ($alt) { $res = $research[$alt] }
-    }
     $units += [ordered]@{
       id = $id
       name = $(Lookup-UnitName $id $side)
@@ -720,10 +770,13 @@ $weaponList = @($weapons.Values | ForEach-Object {
   }
 })
 
+$researchList = @($research.Values | Sort-Object side, y, x, id)
+
 $doc = [ordered]@{
   source = 'game_files'
   gamePath = $Game
   units = $units
+  research = $researchList
   weapons = $weaponList
   ammo = @($ammo.Values)
 }
