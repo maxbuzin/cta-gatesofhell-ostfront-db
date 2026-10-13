@@ -10,10 +10,19 @@ import {
 } from "@/lib/db/keyset-cursor";
 import { escapeLike } from "@/lib/safe";
 import {
+  factionSlugOf,
   mapSnapshot,
+  researchSlug,
   SNAPSHOT_FACTIONS,
   SNAPSHOT_TYPES,
 } from "../../etl/snapshot-map.mjs";
+import {
+  applyDisplayedStat,
+  patchResearchUnits,
+  replaceUnitAt,
+  writeSnapshotFile,
+  type StatField,
+} from "@/lib/local-edit-guard";
 
 type Stats = {
   hp: number | null;
@@ -112,7 +121,7 @@ type ResearchNode = {
   row: number | null;
   researchCost: number | null;
   factionSlug: string;
-  units: { unitSlug: string; unitName: string }[];
+  units: { unitSlug: string; unitName: string; period: string | null }[];
 };
 
 type Catalog = {
@@ -139,6 +148,8 @@ type Catalog = {
   units: Unit[];
   researchNodes: ResearchNode[];
   researchEdges: { fromNodeId: number; toNodeId: number; kind: string }[];
+  sourceIndexBySlug: Map<string, number>;
+  researchByKey: Map<string, ResearchSource>;
 };
 
 type Filters = {
@@ -200,6 +211,13 @@ type MappedRecord = {
   specialties: { slug: string; nameEn: string }[];
   weapons: MappedWeapon[];
   stats: Stats & Record<string, unknown>;
+  sourceIndex?: number;
+};
+
+export type ResearchSource = {
+  id: string;
+  costs: number | null;
+  requires: string[];
 };
 
 type MappedResearch = {
@@ -227,6 +245,44 @@ const SORTS = new Set<CursorSortKey>([
 
 const FILE = path.join(process.cwd(), "data/snapshots/game-units.json");
 
+type RawDoc = { units?: unknown[] };
+
+let rawDoc: RawDoc | null = null;
+
+function readRaw(): RawDoc {
+  if (!rawDoc) {
+    rawDoc = JSON.parse(readFileSync(FILE, "utf8")) as RawDoc;
+  }
+  return rawDoc;
+}
+
+function indexResearch(doc: RawDoc): Map<string, ResearchSource> {
+  const map = new Map<string, ResearchSource>();
+  const units = Array.isArray(doc.units) ? doc.units : [];
+  for (const unit of units) {
+    if (!unit || typeof unit !== "object" || Array.isArray(unit)) continue;
+    const row = unit as Record<string, unknown>;
+    const faction = factionSlugOf(row.side);
+    const research = row.research;
+    if (!faction || !research || typeof research !== "object" || Array.isArray(research)) {
+      continue;
+    }
+    const block = research as Record<string, unknown>;
+    if (typeof block.id !== "string" || !block.id) continue;
+    const slug = researchSlug(block.id);
+    if (!slug) continue;
+    const key = `${faction}|${slug}`;
+    if (map.has(key)) continue;
+    const costs =
+      typeof block.costs === "number" && Number.isFinite(block.costs) ? block.costs : null;
+    const requires = Array.isArray(block.requires)
+      ? block.requires.filter((item): item is string => typeof item === "string" && item.length > 0)
+      : [];
+    map.set(key, { id: block.id, costs, requires });
+  }
+  return map;
+}
+
 function textExtra(stats: MappedRecord["stats"], key: "roster" | "period") {
   const extra = stats.extra;
   if (!extra || typeof extra !== "object") return null;
@@ -237,7 +293,7 @@ function textExtra(stats: MappedRecord["stats"], key: "roster" | "period") {
 let catalog: Catalog | null = null;
 
 function buildCatalog(): Catalog {
-  const doc = JSON.parse(readFileSync(FILE, "utf8")) as { units?: unknown[] };
+  const doc = readRaw();
   const mapped = mapSnapshot(doc) as {
     records: MappedRecord[];
     research: MappedResearch[];
@@ -260,7 +316,11 @@ function buildCatalog(): Catalog {
   const ammoIds = new Map<string, number>();
   let nextWeapon = 1;
   let nextAmmo = 1;
+  const sourceIndexBySlug = new Map<string, number>();
   const units: Unit[] = mapped.records.map((record, index) => {
+    if (typeof record.sourceIndex === "number") {
+      sourceIndexBySlug.set(record.slug, record.sourceIndex);
+    }
     const faction = factionBySlug.get(record.factionSlug);
     const type = typeByCode.get(record.typeCode);
     const weapons = record.weapons.map((weapon) => {
@@ -382,7 +442,7 @@ function buildCatalog(): Catalog {
     };
   });
 
-  const nameBySlug = new Map(units.map((unit) => [unit.slug, unit.name]));
+  const unitBySlug = new Map(units.map((unit) => [unit.slug, unit]));
   const researchNodes: ResearchNode[] = mapped.research.map((node, index) => ({
     id: index + 1,
     slug: node.slug,
@@ -392,10 +452,14 @@ function buildCatalog(): Catalog {
     row: null,
     researchCost: node.researchCost,
     factionSlug: node.factionSlug,
-    units: node.unitSlugs.map((slug) => ({
-      unitSlug: slug,
-      unitName: nameBySlug.get(slug) ?? slug,
-    })),
+    units: node.unitSlugs.map((slug) => {
+      const linked = unitBySlug.get(slug);
+      return {
+        unitSlug: slug,
+        unitName: linked?.name ?? slug,
+        period: linked?.period ?? null,
+      };
+    }),
   }));
   const nodeId = new Map(researchNodes.map((node) => [`${node.factionSlug}|${node.slug}`, node.id]));
   const researchEdges: Catalog["researchEdges"] = [];
@@ -433,7 +497,14 @@ function buildCatalog(): Catalog {
     units,
     researchNodes,
     researchEdges,
+    sourceIndexBySlug,
+    researchByKey: indexResearch(doc),
   };
+}
+
+function rebuildCatalog() {
+  catalog = null;
+  catalog = buildCatalog();
 }
 
 function load() {
@@ -651,5 +722,134 @@ export function snapshotResearch(factionSlug: string) {
     edges: data.researchEdges.filter(
       (edge) => ids.has(edge.fromNodeId) && ids.has(edge.toNodeId),
     ),
+  };
+}
+
+export type UnitUnlock = {
+  name: string;
+  researchCost: number | null;
+  steps: { slug: string; name: string; researchCost: number | null }[];
+};
+
+export function rawUnitRecord(slug: string): Record<string, unknown> | null {
+  const index = load().sourceIndexBySlug.get(slug);
+  const units = readRaw().units;
+  if (index == null || !Array.isArray(units)) return null;
+  const unit = units[index];
+  if (!unit || typeof unit !== "object" || Array.isArray(unit)) return null;
+  return unit as Record<string, unknown>;
+}
+
+export function rawUnitText(slug: string): string | null {
+  const unit = rawUnitRecord(slug);
+  if (!unit) return null;
+  return JSON.stringify(unit, null, 2);
+}
+
+export function researchSourcesForFaction(factionSlug: string): Record<string, ResearchSource> {
+  const out: Record<string, ResearchSource> = {};
+  const prefix = `${factionSlug}|`;
+  for (const [key, value] of load().researchByKey) {
+    if (!key.startsWith(prefix)) continue;
+    out[key.slice(prefix.length)] = value;
+  }
+  return out;
+}
+
+export function replaceRawUnit(slug: string, next: unknown) {
+  const index = load().sourceIndexBySlug.get(slug);
+  const units = readRaw().units;
+  if (index == null || !Array.isArray(units)) {
+    return { ok: false as const, status: 404, error: "Unit not found" };
+  }
+  const previous = units[index];
+  const result = replaceUnitAt(units, index, next);
+  if (!result.ok) return result;
+  try {
+    writeSnapshotFile(readRaw(), FILE);
+  } catch (err) {
+    units[index] = previous;
+    throw err;
+  }
+  rebuildCatalog();
+  return { ok: true as const };
+}
+
+export function patchRawStat(slug: string, field: StatField, value: string | number | null) {
+  const index = load().sourceIndexBySlug.get(slug);
+  const units = readRaw().units;
+  if (index == null || !Array.isArray(units)) {
+    return { ok: false as const, status: 404, error: "Unit not found" };
+  }
+  const unit = units[index];
+  if (!unit || typeof unit !== "object" || Array.isArray(unit)) {
+    return { ok: false as const, status: 404, error: "Unit not found" };
+  }
+  const result = applyDisplayedStat(unit as Record<string, unknown>, field, value);
+  if (!result.ok) return { ok: false as const, status: 400, error: result.error };
+  try {
+    writeSnapshotFile(readRaw(), FILE);
+  } catch (err) {
+    result.undo();
+    throw err;
+  }
+  rebuildCatalog();
+  return { ok: true as const };
+}
+
+export function patchRawResearch(
+  factionSlug: string,
+  nodeSlug: string,
+  costs: number | null,
+  requires: string[],
+) {
+  const units = readRaw().units;
+  if (!Array.isArray(units)) {
+    return { ok: false as const, status: 404, error: "Research not found" };
+  }
+  const patched = patchResearchUnits(units, factionSlug, nodeSlug, costs, requires);
+  if (patched.count === 0) {
+    return { ok: false as const, status: 404, error: "Research not found" };
+  }
+  try {
+    writeSnapshotFile(readRaw(), FILE);
+  } catch (err) {
+    patched.undo();
+    throw err;
+  }
+  rebuildCatalog();
+  return { ok: true as const, count: patched.count };
+}
+
+export function snapshotUnlock(slug: string): UnitUnlock | null {
+  const data = load();
+  const node = data.researchNodes.find((row) =>
+    row.units.some((unit) => unit.unitSlug === slug),
+  );
+  if (!node) return null;
+  const byId = new Map(data.researchNodes.map((row) => [row.id, row]));
+  const parents = new Map<number, number[]>();
+  for (const edge of data.researchEdges) {
+    const list = parents.get(edge.toNodeId) ?? [];
+    list.push(edge.fromNodeId);
+    parents.set(edge.toNodeId, list);
+  }
+  const seen = new Set<number>();
+  const order: number[] = [];
+  const walk = (id: number) => {
+    if (seen.has(id)) return;
+    seen.add(id);
+    for (const parent of parents.get(id) ?? []) walk(parent);
+    order.push(id);
+  };
+  walk(node.id);
+  return {
+    name: node.name,
+    researchCost: node.researchCost,
+    steps: order.flatMap((id) => {
+      const step = byId.get(id);
+      if (!step) return [];
+      return [{ slug: step.slug, name: step.name, researchCost: step.researchCost }];
+    }),
   };
 }

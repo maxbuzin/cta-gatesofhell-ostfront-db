@@ -3,11 +3,15 @@ import { Suspense } from "react";
 import { ColorLegend } from "@/components/units/color-legend";
 import { UnitsBrowse } from "@/components/units/units-browse";
 import { UnitsView } from "@/components/units/units-view";
+import { AddNew } from "@/components/edit/add-new";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  getBrowseFilters,
   getFactions,
+  listResearchChoices,
   listUnits,
 } from "@/lib/db/queries/units";
+import { editsOpen } from "@/lib/local-edit";
 import {
   normalizeUnitsParams,
   unitsSearchParamsCache,
@@ -30,17 +34,46 @@ async function UnitsContent({
     total: 0,
     nextCursor: null as string | null,
   };
-  const [factions, result] = await Promise.all([
+  const emptyFilters: Awaited<ReturnType<typeof getBrowseFilters>> = {
+    types: [],
+    specialties: [],
+    stats: {
+      pen: false,
+      armor: false,
+      speed: false,
+      range: false,
+      helmet: false,
+      shield: false,
+    },
+  };
+  const editable = await editsOpen();
+  const [factions, result, research, browseFilters] = await Promise.all([
     withQueryFallback(() => getFactions(), [], "Failed to load factions"),
     withQueryFallback(
       () => listUnits(filters),
       emptyList,
       "Failed to list units",
     ),
+    editable
+      ? withQueryFallback(() => listResearchChoices(), [], "Failed to load research")
+      : Promise.resolve([]),
+    withQueryFallback(() => getBrowseFilters(), emptyFilters, "Failed to load filters"),
   ]);
 
   return (
-    <UnitsBrowse factions={factions} legend={<ColorLegend />}>
+    <UnitsBrowse
+      factions={factions}
+      options={browseFilters}
+      legend={<ColorLegend />}
+      header={
+        editable ? (
+          <AddNew
+            factions={factions.map((row) => ({ slug: row.slug, nameEn: row.nameEn }))}
+            research={research}
+          />
+        ) : null
+      }
+    >
       <UnitsView
         rows={result.rows}
         total={result.total}

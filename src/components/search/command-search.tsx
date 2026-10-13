@@ -71,7 +71,7 @@ export function CommandSearch({ index }: { index: SearchIndexItem[] }) {
 
   return (
     <>
-      <div className="relative hidden w-full max-w-md md:block">
+      <div className="relative hidden min-w-0 flex-1 md:block">
         <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           readOnly
@@ -84,7 +84,7 @@ export function CommandSearch({ index }: { index: SearchIndexItem[] }) {
       <Button
         variant="ghost"
         size="icon"
-        className="md:hidden"
+        className="ml-auto md:hidden"
         aria-label="Open search"
         onClick={() => setOpen(true)}
       >

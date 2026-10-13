@@ -1,0 +1,239 @@
+# Theme
+
+Tailwind v4. Tokens live in `src/app/globals.css`. No `tailwind.config`.
+
+## Compact token summary
+
+Color scheme: dark only.
+
+| Token | Value |
+| --- | --- |
+| background | #121410 |
+| foreground | #e6e4dc |
+| surface / card / popover | #1b1e18 |
+| primary | #7a8b5c |
+| primary-foreground | #121410 |
+| secondary / muted | #2c3127 |
+| muted-foreground | #9a9888 |
+| accent / brass | #b89a55 |
+| destructive | #c0443a |
+| border / input | #2c3127 |
+| ring | #7a8b5c |
+| sidebar | #1b1e18 |
+| stat-green | #6a9a6a |
+| stat-yellow | #d4b84a |
+| stat-red | #d05a50 |
+| stat-pink | #d07a9a |
+| stat-blue | #5a8fc4 |
+| stat-gray | #8a8a8a |
+| stat-purple | #9a7aab |
+
+Fonts:
+- sans / body: Syne Mono (`--font-syne-mono`), CSS var `--font-sans`
+- mono / stats: JetBrains Mono (`--font-jetbrains`), class `font-stat`
+- display: Black Ops One (`--font-stencil`), class `font-display`
+
+Type scale override:
+- `--text-sm`: 1rem
+- `--text-base`: 1.125rem
+- `.page-title`: text-2xl font-semibold tracking-tight
+- `.section-label`: text-sm font-medium text-muted-foreground
+
+Radius: `--radius: 0.375rem`. sm 0.6, md 0.8, lg 1, xl 1.4 of that.
+
+Layout tokens:
+- `--chrome-h`: calc(3.5rem + env(safe-area-inset-top)), overwritten by ChromeBar measurement
+- `--tray-h`: 0px until compare tray mounts
+- Left rail: 14rem (w-56) from md
+- Right rail: 20rem (w-80) from lg when `[data-right-rail]` exists
+
+Breakpoints used: sm 640, md 768, lg 1024, xl 1280. Custom media at 64rem for scrollbar-gutter.
+
+Spacing in the shell is Tailwind default (4px base). No custom spacing scale.
+
+Shadows: shadow-xs on buttons/inputs, shadow-lg on sheets. No custom shadow tokens.
+
+Motion: color/opacity transitions 150ms. Sheet 300ms out / 500ms in. `prefers-reduced-motion` collapses animation and transition to 0.01ms.
+
+## Raw source
+
+### `src/app/globals.css`
+
+```css
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-syne-mono);
+  --font-mono: var(--font-jetbrains);
+  --font-display: var(--font-stencil);
+  --text-sm: 1rem;
+  --text-base: 1.125rem;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-surface: var(--surface);
+  --color-brass: var(--brass);
+  --color-stat-green: var(--stat-green);
+  --color-stat-yellow: var(--stat-yellow);
+  --color-stat-red: var(--stat-red);
+  --color-stat-pink: var(--stat-pink);
+  --color-stat-blue: var(--stat-blue);
+  --color-stat-gray: var(--stat-gray);
+  --color-stat-purple: var(--stat-purple);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+}
+
+:root {
+  color-scheme: dark;
+  --background: #121410;
+  --foreground: #e6e4dc;
+  --surface: #1b1e18;
+  --card: #1b1e18;
+  --card-foreground: #e6e4dc;
+  --popover: #1b1e18;
+  --popover-foreground: #e6e4dc;
+  --primary: #7a8b5c;
+  --primary-foreground: #121410;
+  --secondary: #2c3127;
+  --secondary-foreground: #e6e4dc;
+  --muted: #2c3127;
+  --muted-foreground: #9a9888;
+  --accent: #b89a55;
+  --accent-foreground: #121410;
+  --destructive: #c0443a;
+  --border: #2c3127;
+  --input: #2c3127;
+  --ring: #7a8b5c;
+  --brass: #b89a55;
+  --stat-green: #6a9a6a;
+  --stat-yellow: #d4b84a;
+  --stat-red: #d05a50;
+  --stat-pink: #d07a9a;
+  --stat-blue: #5a8fc4;
+  --stat-gray: #8a8a8a;
+  --stat-purple: #9a7aab;
+  --chart-1: #7a8b5c;
+  --chart-2: #b89a55;
+  --chart-3: #c0443a;
+  --chart-4: #3e6fa8;
+  --chart-5: #5e6b73;
+  --radius: 0.375rem;
+  --sidebar: #1b1e18;
+  --sidebar-foreground: #e6e4dc;
+  --sidebar-primary: #7a8b5c;
+  --sidebar-primary-foreground: #121410;
+  --sidebar-accent: #2c3127;
+  --sidebar-accent-foreground: #e6e4dc;
+  --sidebar-border: #2c3127;
+  --sidebar-ring: #7a8b5c;
+  --chrome-h: calc(3.5rem + env(safe-area-inset-top));
+  --tray-h: 0px;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
+  }
+  html {
+    @apply scroll-smooth;
+    scrollbar-color: var(--border) var(--background);
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--primary) 45%, var(--background));
+    color: var(--foreground);
+  }
+  input,
+  textarea {
+    caret-color: var(--brass);
+  }
+  a {
+    text-underline-offset: 0.15em;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-stencil), var(--font-sans), sans-serif;
+  }
+  .font-stat {
+    font-family: var(--font-jetbrains), ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+  .page-title {
+    @apply font-sans text-2xl font-semibold tracking-tight text-foreground;
+  }
+  .section-label {
+    @apply text-sm font-medium text-muted-foreground;
+  }
+  .hit-row {
+    min-height: 0;
+  }
+}
+
+@media (pointer: coarse) {
+  [data-slot="button"][data-size="icon"],
+  [data-slot="button"][data-size="icon-sm"] {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+  }
+  .hit-row {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+  }
+}
+
+@media (min-width: 64rem) {
+  html:has([data-right-rail]) {
+    scrollbar-gutter: stable;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+```
+

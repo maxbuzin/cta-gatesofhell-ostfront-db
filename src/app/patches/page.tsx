@@ -17,7 +17,7 @@ export default async function PatchesPage() {
   );
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="space-y-6">
       <h1 className="page-title">Patch Notes</h1>
       {versions.length === 0 ? (
         <EmptyState

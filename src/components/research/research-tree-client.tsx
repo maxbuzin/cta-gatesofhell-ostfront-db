@@ -19,9 +19,23 @@ const ResearchTreeCanvas = dynamic(
 export function ResearchTreeClient({
   nodes,
   edges,
+  highlightSlug = null,
+  factionSlug = null,
+  editable = false,
 }: {
   nodes: ResearchNodeData[];
   edges: { fromNodeId: number; toNodeId: number }[];
+  highlightSlug?: string | null;
+  factionSlug?: string | null;
+  editable?: boolean;
 }) {
-  return <ResearchTreeCanvas nodes={nodes} edges={edges} />;
+  return (
+    <ResearchTreeCanvas
+      nodes={nodes}
+      edges={edges}
+      highlightSlug={highlightSlug}
+      factionSlug={factionSlug}
+      editable={editable}
+    />
+  );
 }

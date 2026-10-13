@@ -39,6 +39,14 @@ const SIDES = {
   pol: "poland",
 };
 
+const FACTION_SIDE = Object.fromEntries(
+  Object.entries(SIDES).map(([code, slug]) => [slug, code]),
+);
+
+export function factionSlugOf(side) {
+  return SIDES[String(side || "").toLowerCase()] ?? null;
+}
+
 const AMMO_KINDS = [
   ["APDS", "APDS"],
   ["APCR", "APCR"],
@@ -258,6 +266,65 @@ function primaryOf(weapons) {
   return bestWeapon(mounted.length ? mounted : weapons);
 }
 
+function rawMount(weapon) {
+  return fitSlug(slugify(String(weapon?.place || "main")), 32) || "main";
+}
+
+function bestRawWeapon(weapons) {
+  let best = null;
+  let bestCal = -1;
+  for (const weapon of weapons) {
+    const cal = finite(weapon?.calibre);
+    const calN = cal == null ? -1 : cal;
+    const ap = weapon?.ap;
+    const hasAp = ap && typeof ap === "object" && (ap.pointBlank != null || ap.at100 != null);
+    const bestAp =
+      best?.ap &&
+      typeof best.ap === "object" &&
+      (best.ap.pointBlank != null || best.ap.at100 != null);
+    if (!best || calN > bestCal || (calN === bestCal && hasAp && !bestAp)) {
+      best = weapon;
+      bestCal = calN;
+    }
+  }
+  return best;
+}
+
+export function primaryRawWeapon(unit) {
+  const list = Array.isArray(unit?.weapons) ? unit.weapons : [];
+  const usable = list.filter(
+    (weapon) => weapon && typeof weapon === "object" && fitSlug(slugify(String(weapon.id || "")), 80),
+  );
+  const mounted = usable.filter((weapon) => {
+    const mount = rawMount(weapon);
+    return mount === "gun" || mount.startsWith("gun-");
+  });
+  return bestRawWeapon(mounted.length ? mounted : usable);
+}
+
+export function hullFrontPlate(unit) {
+  const armor = unit?.vehicle?.armor;
+  const list = Array.isArray(armor) ? armor : [];
+  const hull = list.filter(
+    (plate) =>
+      plate &&
+      typeof plate === "object" &&
+      !/turret|gun/i.test(String(plate.volume || "")),
+  );
+  const body = hull.length ? hull : list.filter((plate) => plate && typeof plate === "object");
+  let best = null;
+  let bestN = null;
+  for (const plate of body) {
+    const n = small(plate.front);
+    if (n == null) continue;
+    if (bestN == null || n > bestN) {
+      best = plate;
+      bestN = n;
+    }
+  }
+  return best;
+}
+
 function headcount(members) {
   if (!Array.isArray(members) || members.length === 0) return null;
   let n = 0;
@@ -277,8 +344,51 @@ function extraOf(unit) {
   return Object.keys(extra).length ? extra : null;
 }
 
-function researchSlug(id) {
+export function researchSlug(id) {
   return fitSlug(slugify(String(id || "")), 80);
+}
+
+function stubName(slug) {
+  return slug
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ")
+    .slice(0, 300);
+}
+
+function fillResearchStubs(research, records) {
+  const missing = [];
+  const seen = new Set();
+  for (const node of research.values()) {
+    for (const req of node.requires) {
+      const key = `${node.factionSlug}|${req}`;
+      if (research.has(key) || seen.has(key)) continue;
+      seen.add(key);
+      missing.push({ factionSlug: node.factionSlug, slug: req });
+    }
+  }
+  for (const stub of missing) {
+    const side = FACTION_SIDE[stub.factionSlug];
+    const matches = records.filter((record) => {
+      if (record.factionSlug !== stub.factionSlug) return false;
+      const id = record.shortName || "";
+      if (!id) return false;
+      if (side && researchSlug(`${id}(${side})`) === stub.slug) return true;
+      return researchSlug(id) === stub.slug;
+    });
+    const first = matches[0];
+    const roster = first?.stats?.extra?.roster;
+    research.set(`${stub.factionSlug}|${stub.slug}`, {
+      factionSlug: stub.factionSlug,
+      slug: stub.slug,
+      name: first?.name || stubName(stub.slug),
+      branch: String(roster || "general").slice(0, 80),
+      researchCost: null,
+      requires: [],
+      unitSlugs: matches.map((record) => record.slug),
+    });
+  }
 }
 
 function rememberResearch(research, record, unit) {
@@ -419,16 +529,53 @@ function mapUnit(unit, taken, research) {
   return { record };
 }
 
+const ROSTER_RANK = { conquest: 0, late: 1, mid: 2, early: 3 };
+const PERIOD_RANK = { late: 0, mid: 1, early: 2 };
+
+function variantScore(unit) {
+  const roster = ROSTER_RANK[String(unit?.roster || "")] ?? 9;
+  const research = unit?.research?.id ? 0 : 1;
+  const period = PERIOD_RANK[String(unit?.period || "")] ?? 9;
+  return roster * 100 + research * 10 + period;
+}
+
+function keptIndexes(units) {
+  const best = new Map();
+  const keep = new Set();
+  units.forEach((unit, index) => {
+    const id = String(unit?.id || "").trim();
+    const faction = SIDES[String(unit?.side || "").toLowerCase()];
+    if (!id || !faction) {
+      keep.add(index);
+      return;
+    }
+    const key = `${faction}|${id}`;
+    const score = variantScore(unit);
+    const prev = best.get(key);
+    if (!prev || score < prev.score || (score === prev.score && index < prev.index)) {
+      if (prev) keep.delete(prev.index);
+      best.set(key, { index, score });
+      keep.add(index);
+    }
+  });
+  return keep;
+}
+
 export function mapSnapshot(doc) {
   const units = Array.isArray(doc?.units) ? doc.units : [];
+  const keep = keptIndexes(units);
   const taken = new Set();
   const records = [];
   const skipped = [];
   const research = new Map();
-  for (const unit of units) {
-    const result = mapUnit(unit, taken, research);
-    if (result.record) records.push(result.record);
-    else skipped.push({ id: result.id, reason: result.reason });
+  for (let index = 0; index < units.length; index++) {
+    if (!keep.has(index)) continue;
+    const result = mapUnit(units[index], taken, research);
+    if (result.record) {
+      result.record.sourceIndex = index;
+      records.push(result.record);
+    } else skipped.push({ id: result.id, reason: result.reason });
   }
+  fillResearchStubs(research, records);
   return { records, skipped, research: [...research.values()] };
 }

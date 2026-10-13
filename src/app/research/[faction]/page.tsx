@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { getFactions, getResearchTree } from "@/lib/db/queries/units";
+import { getFactions, getResearchTree, listResearchChoices } from "@/lib/db/queries/units";
+import { editsOpen } from "@/lib/local-edit";
+import { AddNew } from "@/components/edit/add-new";
 import { FACTIONS } from "@/lib/factions";
 import { cn } from "@/lib/utils";
 import { ResearchTreeClient } from "@/components/research/research-tree-client";
@@ -10,13 +12,22 @@ import { withQueryFallback } from "@/lib/safe-query";
 import { isKnownFactionSlug } from "@/lib/faction-slug";
 import { notFound } from "next/navigation";
 
-type Props = { params: Promise<{ faction: string }> };
+type Params = { params: Promise<{ faction: string }> };
+type Props = Params & {
+  searchParams: Promise<{ unit?: string | string[] }>;
+};
+
+function oneUnit(raw: string | string[] | undefined) {
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  if (!value || !/^[a-z0-9][a-z0-9-]{0,79}$/.test(value)) return null;
+  return value;
+}
 
 export function generateStaticParams() {
   return FACTIONS.map((f) => ({ faction: f.slug }));
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { faction } = await params;
   if (!isKnownFactionSlug(faction)) {
     return { title: "Research not found" };
@@ -24,17 +35,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: `Research Tree – ${faction}` };
 }
 
-async function ResearchContent({ params }: Props) {
+async function ResearchContent({ params, searchParams }: Props) {
   const { faction } = await params;
+  const highlightSlug = oneUnit((await searchParams).unit);
   if (!isKnownFactionSlug(faction)) notFound();
   const emptyTree = { nodes: [], edges: [], faction: null };
-  const [factions, tree] = await Promise.all([
+  const editable = await editsOpen();
+  const [factions, tree, research] = await Promise.all([
     withQueryFallback(() => getFactions(), [], "Failed to load factions"),
     withQueryFallback(
       () => getResearchTree(faction),
       emptyTree,
       "Failed to load research tree",
     ),
+    editable
+      ? withQueryFallback(() => listResearchChoices(), [], "Failed to load research")
+      : Promise.resolve([]),
   ]);
 
   const tabs =
@@ -48,8 +64,16 @@ async function ResearchContent({ params }: Props) {
       : FACTIONS;
 
   return (
-    <div className="mx-auto max-w-7xl space-y-4">
-      <h1 className="page-title">Research Tree</h1>
+    <div className="space-y-4">
+      <div className="flex items-start justify-between gap-3">
+        <h1 className="page-title">Research Tree</h1>
+        {editable ? (
+          <AddNew
+            factions={factions.map((row) => ({ slug: row.slug, nameEn: row.nameEn }))}
+            research={research}
+          />
+        ) : null}
+      </div>
       <div className="flex flex-wrap gap-2">
         {tabs.map((f) => (
           <Link
@@ -76,9 +100,13 @@ async function ResearchContent({ params }: Props) {
           units: n.units.map((u) => ({
             unitSlug: u.unitSlug,
             unitName: u.unitName,
+            period: u.period,
           })),
         }))}
         edges={tree.edges}
+        highlightSlug={highlightSlug}
+        factionSlug={faction}
+        editable={editable}
       />
     </div>
   );

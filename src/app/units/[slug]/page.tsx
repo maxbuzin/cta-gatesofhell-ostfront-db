@@ -27,7 +27,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { z } from "zod";
-import { getUnitBySlug } from "@/lib/db/queries/units";
+import { InlineEdit } from "@/components/edit/inline-edit";
+import { getUnitBySlug, getUnitUnlock } from "@/lib/db/queries/units";
+import { editsOpen } from "@/lib/local-edit";
 import { formatStat } from "@/lib/safe";
 import { ColorLegend } from "@/components/units/color-legend";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -77,12 +79,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 async function UnitDetailContent({ params }: Props) {
   const { slug } = await params;
   if (!unitSlugSchema.safeParse(slug).success) notFound();
-  const unit = await withQueryFallback(
-    () => getUnitBySlug(slug),
-    null,
-    "Failed to load unit",
-  );
+  const [unit, unlock] = await Promise.all([
+    withQueryFallback(() => getUnitBySlug(slug), null, "Failed to load unit"),
+    withQueryFallback(
+      () => getUnitUnlock(slug),
+      null,
+      "Failed to load unlock path",
+    ),
+  ]);
   if (!unit) notFound();
+  const editable = await editsOpen();
+  const statEdit = (field: "armor" | "speed" | "reload" | "penetration" | "cp") =>
+    editable ? { slug: unit.slug, field } : null;
 
   const cp = unit.costs.find((c) => c.kind === "cp")?.amount ?? null;
   const resources =
@@ -128,14 +136,25 @@ async function UnitDetailContent({ params }: Props) {
   }));
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="space-y-6">
       <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
         <UnitSilhouette
           className="rounded-md border border-border"
           label={unit.name}
         />
         <div className="space-y-3">
-          <h1 className="page-title">{unit.name}</h1>
+          <h1 className="page-title">
+            {editable ? (
+              <InlineEdit
+                label="Name"
+                kind="text"
+                value={unit.name}
+                save={{ kind: "stat", slug: unit.slug, field: "name" }}
+              />
+            ) : (
+              unit.name
+            )}
+          </h1>
           <div className="flex flex-wrap items-center gap-2">
             <FactionBadge
               slug={unit.factionSlug}
@@ -147,7 +166,11 @@ async function UnitDetailContent({ params }: Props) {
               <SpecialtyBadge key={s.slug} name={s.nameEn} />
             ))}
           </div>
-          <CostChips cp={cp} resources={resources} />
+          <CostChips
+            cp={cp}
+            resources={resources}
+            editSlug={editable ? unit.slug : null}
+          />
           <div className="flex flex-wrap gap-2">
             <AddCompareButton
               slug={unit.slug}
@@ -174,11 +197,11 @@ async function UnitDetailContent({ params }: Props) {
           <TabsContent value="overview" className="space-y-4 pt-4">
             <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3">
               <StatCell value={unit.stats?.hp} label="HP" group="yellow" icon="Heart" />
-              <StatCell value={unit.stats?.armorFrontMm} label="Armor" group="yellow" icon="Shield" unit="mm" />
-              <StatCell value={unit.stats?.speedRoadKmh} label="Speed" group="green" icon="Gauge" unit="km/h" />
-              <StatCell value={unit.stats?.reloadS} label="Reload" group="green" icon="Timer" unit="s" direction="lower" />
-              <StatCell value={unit.stats?.penetrationMm} label="Penetration" group="red" icon="Crosshair" unit="mm" />
-              <StatCell value={cp} label="CP" group="gray" icon="HardHat" direction="lower" />
+              <StatCell value={unit.stats?.armorFrontMm} label="Armor" group="yellow" icon="Shield" unit="mm" edit={statEdit("armor")} />
+              <StatCell value={unit.stats?.speedRoadKmh} label="Speed" group="green" icon="Gauge" unit="km/h" edit={statEdit("speed")} />
+              <StatCell value={unit.stats?.reloadS} label="Reload" group="green" icon="Timer" unit="s" direction="lower" edit={statEdit("reload")} />
+              <StatCell value={unit.stats?.penetrationMm} label="Penetration" group="red" icon="Crosshair" unit="mm" edit={statEdit("penetration")} />
+              <StatCell value={cp} label="CP" group="gray" icon="HardHat" direction="lower" edit={statEdit("cp")} />
             </div>
             <div className="grid gap-4 md:grid-cols-2">
               <div>
@@ -280,10 +303,29 @@ async function UnitDetailContent({ params }: Props) {
           </TabsContent>
 
           <TabsContent value="unlock" className="space-y-3 pt-4">
-            <EmptyState
-              title="Unlock path unavailable"
-              description="Research prerequisites will appear after research data is imported."
-            />
+            {unlock ? (
+              <ol className="space-y-2 text-sm">
+                {unlock.steps.map((step, index) => (
+                  <li
+                    key={step.slug}
+                    className="flex items-baseline justify-between gap-3 rounded-md border border-border px-3 py-2"
+                  >
+                    <span>
+                      <span className="text-muted-foreground">{index + 1}. </span>
+                      {step.name}
+                    </span>
+                    <span className="font-stat text-muted-foreground">
+                      {step.researchCost ?? "--"}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <EmptyState
+                title="No research entry"
+                description="This unit is not on the Conquest research tree."
+              />
+            )}
             <Link
               href={`/research/${unit.factionSlug}?unit=${unit.slug}`}
               className="text-sm text-primary hover:underline"

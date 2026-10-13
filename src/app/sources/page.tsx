@@ -17,7 +17,7 @@ export default async function SourcesPage() {
   );
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="space-y-6">
       <h1 className="page-title">Sources & Credits</h1>
       <p className="text-muted-foreground">
         Ostfront DB aggregates community and wiki data. Numeric values are

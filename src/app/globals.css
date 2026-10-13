@@ -97,6 +97,11 @@
   --sidebar-accent-foreground: #e6e4dc;
   --sidebar-border: #2c3127;
   --sidebar-ring: #7a8b5c;
+  --chrome-h: calc(3.5rem + env(safe-area-inset-top));
+  --tray-h: 0px;
+  --rail-left: 0px;
+  --rail-right: 0px;
+  --shell-x: 0.75rem;
 }
 
 @layer base {

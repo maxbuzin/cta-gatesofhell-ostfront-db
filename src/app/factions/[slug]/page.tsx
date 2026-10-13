@@ -74,7 +74,7 @@ async function FactionContent({ params }: Props) {
       : [];
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="space-y-6">
       <div
         className="rounded-md border border-border px-6 py-8"
         style={{

@@ -1,10 +1,14 @@
 import Link from "next/link";
 import { CommandSearch, type SearchIndexItem } from "@/components/search/command-search";
 import { MobileNav } from "@/components/layout/mobile-nav";
-import { FactionChips } from "@/components/layout/faction-chips";
 import { BrandLogo } from "@/components/layout/brand-logo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+
+const STEAM_URL =
+  "https://store.steampowered.com/app/400750/Call_to_Arms__Gates_of_Hell_Ostfront/";
+
+const SHOW_GITHUB = false;
 
 function GitHubIcon({ className }: { className?: string }) {
   return (
@@ -18,40 +22,44 @@ export function TopBar({ searchIndex }: { searchIndex: SearchIndexItem[] }) {
   return (
     <header className="relative z-40 border-b border-border bg-background pt-[env(safe-area-inset-top)]">
       <div className="flex h-14 items-center gap-2 px-3 md:px-4">
-        <div className="relative z-10 flex items-center gap-2 self-stretch bg-background">
+        <div className="flex shrink-0 items-center gap-2">
           <MobileNav />
           <Link
             href="/"
             className="flex shrink-0 items-center gap-2 transition-opacity duration-150 hover:opacity-90"
           >
             <BrandLogo />
-            <span className="font-display text-lg tracking-wider text-foreground">
+            <span className="hidden font-display text-lg tracking-wider text-foreground sm:inline">
               OSTFRONT DB
             </span>
           </Link>
           <Badge
             variant="outline"
-            className="hidden border-brass/60 px-2 py-0.5 text-[10px] tracking-widest text-brass uppercase sm:inline-flex"
+            className="hidden border-brass/60 px-2 py-0.5 text-[10px] tracking-widest text-brass uppercase lg:inline-flex"
           >
             Non-official website
           </Badge>
-          <Button variant="ghost" size="icon" asChild>
-            <a
-              href="https://github.com/maxbuzin/cta-gatesofhell-ostfront-db"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="GitHub repository"
-            >
-              <GitHubIcon className="size-4" />
-            </a>
-          </Button>
+          {SHOW_GITHUB ? (
+            <Button variant="ghost" size="icon" asChild>
+              <a
+                href="https://github.com/maxbuzin/cta-gatesofhell-ostfront-db"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="GitHub repository"
+              >
+                <GitHubIcon className="size-4" />
+              </a>
+            </Button>
+          ) : null}
         </div>
-        <div className="relative z-10 ml-auto flex shrink-0 items-center self-stretch bg-background md:w-72">
+        <div className="flex min-w-0 flex-1 items-center">
           <CommandSearch index={searchIndex} />
         </div>
-      </div>
-      <div className="pointer-events-none absolute inset-x-0 top-[env(safe-area-inset-top)] hidden h-14 items-center justify-center lg:flex">
-        <FactionChips className="pointer-events-auto flex-nowrap" />
+        <Button size="xs" className="shrink-0" asChild>
+          <a href={STEAM_URL} target="_blank" rel="noopener noreferrer">
+            Buy on Steam
+          </a>
+        </Button>
       </div>
     </header>
   );

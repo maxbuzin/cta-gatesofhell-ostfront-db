@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { FACTIONS, FACTION_COLORS } from "@/lib/factions";
 import { safeCssColor } from "@/lib/safe-css-color";
 
@@ -121,7 +122,26 @@ export function countActiveFilters(params: {
   );
 }
 
-export function FilterPanel({ factions }: { factions: FactionOpt[] }) {
+export type BrowseFilterOptions = {
+  types: { code: string; nameEn: string }[];
+  specialties: { slug: string; nameEn: string }[];
+  stats: {
+    pen: boolean;
+    armor: boolean;
+    speed: boolean;
+    range: boolean;
+    helmet: boolean;
+    shield: boolean;
+  };
+};
+
+export function FilterPanel({
+  factions,
+  options,
+}: {
+  factions: FactionOpt[];
+  options: BrowseFilterOptions;
+}) {
   const [params, setParams] = useUnitFilters();
 
   const toggle = (key: "faction" | "type" | "specialty", value: string) => {
@@ -147,8 +167,62 @@ export function FilterPanel({ factions }: { factions: FactionOpt[] }) {
         }))
   ).sort(byLabel((f) => f.nameEn));
 
+  const typeNames = new Map(TYPES.map((type) => [type.code, type.name]));
+  const typeOpts = options.types
+    .map((type) => ({
+      code: type.code,
+      name: typeNames.get(type.code) ?? type.nameEn,
+    }))
+    .sort(byLabel((type) => type.name));
+  const specialtyNames = new Map(SPECIALTIES.map((item) => [item.slug, item.name]));
+  const specialtyOpts = options.specialties
+    .map((item) => ({
+      slug: item.slug,
+      name: specialtyNames.get(item.slug) ?? item.nameEn,
+    }))
+    .sort(byLabel((item) => item.name));
+  const ranges = (
+    [
+      ["pen", "Penetration"],
+      ["armor", "Armor"],
+      ["speed", "Speed"],
+      ["range", "Range"],
+      ["helmet", "Helmet"],
+      ["shield", "Shield"],
+    ] as const
+  ).filter(([key]) => options.stats[key]);
+
+  const reset = () =>
+    void setParams({
+      q: "",
+      faction: [],
+      type: [],
+      specialty: [],
+      penMin: null,
+      penMax: null,
+      armorMin: null,
+      armorMax: null,
+      speedMin: null,
+      speedMax: null,
+      rangeMin: null,
+      rangeMax: null,
+      helmetMin: null,
+      helmetMax: null,
+      shieldMin: null,
+      shieldMax: null,
+      tier: [],
+      cursor: null,
+    });
+
   return (
-    <div className="space-y-5">
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="shrink-0 border-b border-border bg-card p-4">
+        <Button variant="ghost" size="sm" className="w-full" onClick={reset}>
+          Reset filters
+        </Button>
+      </div>
+      <ScrollArea type="auto" className="min-h-0 flex-1">
+      <div className="space-y-5 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
       <div className="space-y-2">
         <Label htmlFor="units-q">Search</Label>
         <Input
@@ -184,9 +258,10 @@ export function FilterPanel({ factions }: { factions: FactionOpt[] }) {
         ))}
       </fieldset>
 
+      {typeOpts.length > 0 ? (
       <fieldset className="space-y-2">
         <legend className="text-sm font-medium">Unit type</legend>
-        {[...TYPES].sort(byLabel((t) => t.name)).map((t) => (
+        {typeOpts.map((t) => (
           <label key={t.code} className="hit-row flex items-center gap-2 text-sm">
             <Checkbox
               checked={params.type.includes(t.code)}
@@ -196,10 +271,12 @@ export function FilterPanel({ factions }: { factions: FactionOpt[] }) {
           </label>
         ))}
       </fieldset>
+      ) : null}
 
+      {specialtyOpts.length > 0 ? (
       <fieldset className="space-y-2">
         <legend className="text-sm font-medium">Main Specialty</legend>
-        {[...SPECIALTIES].sort(byLabel((s) => s.name)).map((s) => (
+        {specialtyOpts.map((s) => (
           <label key={s.slug} className="hit-row flex items-center gap-2 text-sm">
             <Checkbox
               checked={params.specialty.includes(s.slug)}
@@ -209,17 +286,9 @@ export function FilterPanel({ factions }: { factions: FactionOpt[] }) {
           </label>
         ))}
       </fieldset>
+      ) : null}
 
-      {(
-        [
-          ["pen", "Penetration"],
-          ["armor", "Armor"],
-          ["speed", "Speed"],
-          ["range", "Range"],
-          ["helmet", "Helmet"],
-          ["shield", "Shield"],
-        ] as const
-      ).map(([key, label]) => {
+      {ranges.map(([key, label]) => {
         const minKey = `${key}Min` as
           | "penMin"
           | "armorMin"
@@ -266,36 +335,8 @@ export function FilterPanel({ factions }: { factions: FactionOpt[] }) {
           </div>
         );
       })}
-
-      <Button
-        variant="ghost"
-        size="sm"
-        className="w-full"
-        onClick={() =>
-          void setParams({
-            q: "",
-            faction: [],
-            type: [],
-            specialty: [],
-            penMin: null,
-            penMax: null,
-            armorMin: null,
-            armorMax: null,
-            speedMin: null,
-            speedMax: null,
-            rangeMin: null,
-            rangeMax: null,
-            helmetMin: null,
-            helmetMax: null,
-            shieldMin: null,
-            shieldMax: null,
-            tier: [],
-            cursor: null,
-          })
-        }
-      >
-        Reset filters
-      </Button>
+      </div>
+      </ScrollArea>
     </div>
   );
 }

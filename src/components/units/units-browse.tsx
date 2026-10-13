@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,23 +13,27 @@ import {
   countActiveFilters,
   FilterPanel,
   useUnitFilters,
+  type BrowseFilterOptions,
   type FactionOpt,
 } from "@/components/units/filter-panel";
 
 export function UnitsBrowse({
   factions,
+  options,
   legend,
+  header,
   children,
 }: {
   factions: FactionOpt[];
+  options: BrowseFilterOptions;
   legend?: ReactNode;
+  header?: ReactNode;
   children: ReactNode;
 }) {
   const [params] = useUnitFilters();
   const [open, setOpen] = useState(false);
   const [wide, setWide] = useState(true);
   const count = countActiveFilters(params);
-  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 1024px)");
@@ -43,49 +47,37 @@ export function UnitsBrowse({
     return () => mq.removeEventListener("change", apply);
   }, []);
 
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const apply = () => {
-      el.style.setProperty("--sb", `${el.offsetWidth - el.clientWidth}px`);
-    };
-    apply();
-    const ro = new ResizeObserver(apply);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
   return (
-    <div
-      data-units-frame
-      className="flex h-full min-h-0 flex-col overflow-hidden lg:flex-row"
-    >
-      <div
-        ref={scrollRef}
-        data-units-scroll
-        className="min-h-0 min-w-0 flex-1 space-y-3 overflow-x-hidden overflow-y-auto pt-[calc(0.75rem+var(--sb,0px))] pr-3 pb-[calc(0.75rem+var(--sb,0px))]! pl-[calc(0.75rem+var(--sb,0px))]"
-      >
+    <div>
+      <style>{`@media (min-width: 64rem) { :root { --rail-right: 20rem } }`}</style>
+      <div className="space-y-3">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 space-y-2">
             <h1 className="page-title">Units</h1>
             {legend}
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="shrink-0 lg:hidden"
-            onClick={() => setOpen(true)}
-          >
-            <SlidersHorizontal className="size-4" />
-            Filters{count > 0 ? ` (${count})` : ""}
-          </Button>
+          <div className="flex shrink-0 items-center gap-2">
+            {header}
+            <Button
+              variant="outline"
+              size="sm"
+              className="lg:hidden"
+              onClick={() => setOpen(true)}
+            >
+              <SlidersHorizontal className="size-4" />
+              Filters{count > 0 ? ` (${count})` : ""}
+            </Button>
+          </div>
         </div>
         {children}
       </div>
 
       {wide ? (
-        <aside className="hidden w-80 shrink-0 overflow-y-auto border-l border-border bg-card p-4 lg:block">
-          <FilterPanel factions={factions} />
+        <aside
+          data-right-rail
+          className="fixed top-(--chrome-h) right-0 z-30 hidden h-[calc(100dvh_-_var(--chrome-h)_-_var(--tray-h,0px))] w-[var(--rail-right)] flex-col overflow-hidden border-l border-border bg-card lg:flex"
+        >
+          <FilterPanel factions={factions} options={options} />
         </aside>
       ) : null}
 
@@ -94,8 +86,8 @@ export function UnitsBrowse({
           <SheetHeader className="border-b border-border pr-10">
             <SheetTitle>Filters</SheetTitle>
           </SheetHeader>
-          <div className="min-h-0 flex-1 overflow-y-auto p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-            {open && !wide ? <FilterPanel factions={factions} /> : null}
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            {open && !wide ? <FilterPanel factions={factions} options={options} /> : null}
           </div>
         </SheetContent>
       </Sheet>

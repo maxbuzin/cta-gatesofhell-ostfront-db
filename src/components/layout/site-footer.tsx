@@ -5,9 +5,9 @@ const linkClass = "text-primary underline-offset-2 hover:underline";
 
 export function SiteFooter({ gameVersion }: { gameVersion: string | null }) {
   return (
-    <footer className="mt-16 w-full border-t border-border bg-surface/60 px-8 pt-14 pb-2 text-sm text-muted-foreground md:mt-24 md:px-12 md:pt-20 md:pb-2">
-      <div className="flex w-full flex-col gap-10 pb-[env(safe-area-inset-bottom)] md:gap-14">
-        <div className="flex w-full flex-col gap-4 md:flex-row md:items-start md:justify-between md:gap-6">
+    <footer className="mt-12 w-full border-t border-border bg-surface/60 px-[var(--shell-x)] py-4 text-sm text-muted-foreground">
+      <div className="flex w-full flex-col gap-4 pb-[env(safe-area-inset-bottom)]">
+        <div className="flex w-full flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div className="flex items-start gap-3">
             <BrandLogo className="size-10" />
             <div className="space-y-2">
@@ -41,7 +41,7 @@ export function SiteFooter({ gameVersion }: { gameVersion: string | null }) {
             </p>
           </div>
         </div>
-        <p className="border-t border-border pt-8 leading-relaxed">
+        <p className="border-t border-border pt-4 leading-relaxed">
           Call to Arms – Gates of Hell: Ostfront and related names and assets
           are trademarks and/or copyrights of their respective owners. Developed
           by{" "}

@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "targets": {
+    "/": {
+      "targetKind": "existing-ui",
+      "projectId": "6b856a7c-eeae-4215-87e4-15950be79f6c",
+      "baselineDraftId": "3b96bb14-8c73-4778-a3a4-25a9693a6827",
+      "activeDraftId": "3b96bb14-8c73-4778-a3a4-25a9693a6827",
+      "designSystemPath": ".superdesign/design-system.md",
+      "referenceIds": [
+        "public-logo.webp"
+      ],
+      "brandAssets": {
+        "logo": {
+          "assetKey": "public-logo.webp",
+          "url": "https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/projects/6b856a7c-eeae-4215-87e4-15950be79f6c/brand-assets/public-logo.webp/logo.webp",
+          "sourcePath": "public/logo.webp"
+        }
+      },
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        "src/app/globals.css",
+        "src/app/layout.tsx",
+        "src/app/page.tsx",
+        "src/components/layout/top-bar.tsx",
+        "src/components/layout/chrome-bar.tsx",
+        "src/components/layout/desktop-sidebar.tsx",
+        "src/components/layout/sidebar-nav.tsx",
+        "src/components/layout/nav-items.ts",
+        "src/components/layout/site-footer.tsx",
+        "src/components/layout/faction-chips.tsx",
+        "src/components/layout/brand-logo.tsx",
+        "src/components/layout/mobile-nav.tsx",
+        "src/components/compare/compare-tray.tsx",
+        "src/components/home/fan-notice.tsx",
+        "src/components/home/home-search.tsx",
+        "src/components/units/units-browse.tsx",
+        "src/components/ui/button.tsx",
+        "src/components/ui/badge.tsx",
+        "src/components/ui/input.tsx"
+      ],
+      "fingerprints": {
+        ".superdesign/design-system.md": "4fa143a693c0889e01e2f74446b4864091e4b9e40c33e8e36acdfda80ede0394",
+        "src/app/globals.css": "d738c695c2315d7d89c765935e9984a26178ff266030766da5912e0061fc7141",
+        "src/app/layout.tsx": "c35c747935fb4175b17901388488f3cace38c54cd7036455d583fe34af200318",
+        "src/app/page.tsx": "63531afed6d56911a9e14636bd665ff83f2d0846eeac8e85af1d7275572731f4",
+        "src/components/layout/top-bar.tsx": "601f188a6c20185c88c63cea4ab42ca8f759399d9b01ec1df97b2bdad98c55d7",
+        "src/components/layout/chrome-bar.tsx": "fe85cb74af74bb123486cb8e737192fb38e37ec12590fa070a5d0fac329515f5",
+        "src/components/layout/desktop-sidebar.tsx": "f39b205f7093b5d8b535da4ff47200faff45c78cf229891515fe04150663395e",
+        "src/components/layout/sidebar-nav.tsx": "3b1f81fd8cd1c3cc7356d778ef406ee4c4d2d2e8e66e1229537d1f2307d975a6",
+        "src/components/layout/nav-items.ts": "a03ad37269c1ead5391eb1f5d2d09eaf37c0fc58da1bf2a72a89df70f8ea5004",
+        "src/components/layout/site-footer.tsx": "adc1e971e30978d9915c064bb7ed3855ba12d9be0a806ccb1cd5bb10e1e333e9",
+        "src/components/layout/faction-chips.tsx": "b040e7e08b49b5d99b8b54daad9172b4d7150cd413e0d49c3acfa7fceef0e626",
+        "src/components/layout/brand-logo.tsx": "af321430fdeaa7b7b94ba7aea1fd7b7d423117a2968b1697987ee87c0ae854c0",
+        "src/components/layout/mobile-nav.tsx": "083a94df3ceec54346fb2da9711c0f1b925ffe7838e1f857e681d1bc10a97341",
+        "src/components/compare/compare-tray.tsx": "1c6e6cc9d26550027d134cec3065a5211487c8fa92139b73037399b45c27e066",
+        "src/components/home/fan-notice.tsx": "c2c8c678cd7b00e686e10665e48508143d835b8ca024668e08f6f3ccfe28fc6c",
+        "src/components/home/home-search.tsx": "a7514a63423f58d939565f54a4f2e6de33b2122fa318453f7bbea096feba842e",
+        "src/components/units/units-browse.tsx": "a9bfad0da59375023b99d2c6dde6d5eacfceb412ff28d811e2916c49ed52b357",
+        "src/components/ui/button.tsx": "2d3b4b05b6c450a542b57b62ca3116094fff1c9c332492831f586237ad05965c",
+        "src/components/ui/badge.tsx": "4580925611f1445e2845aca9af3ac040ec9ddec0235a444b5df1f98d311d0535",
+        "src/components/ui/input.tsx": "12cc959aa39a32224601c41df0261176242f2d21dd90e563dbcf198d745a43ac"
+      },
+      "components": [
+        {
+          "name": "TopBar",
+          "id": "67f7ab6e-c177-44a0-9717-9da4b90de32d",
+          "sourcePath": "src/components/layout/top-bar.tsx",
+          "logoAssetKey": "public-logo.webp"
+        },
+        {
+          "name": "DesktopSidebar",
+          "id": "edccccd9-5c40-4023-847f-ca27d64e645b",
+          "sourcePath": "src/components/layout/desktop-sidebar.tsx"
+        },
+        {
+          "name": "SiteFooter",
+          "id": "9726b1c4-a00a-4c04-8267-dd61bc8f0504",
+          "sourcePath": "src/components/layout/site-footer.tsx",
+          "logoAssetKey": "public-logo.webp"
+        }
+      ],
+      "drafts": {
+        "3b96bb14-8c73-4778-a3a4-25a9693a6827": {
+          "title": "Current Home shell",
+          "visualDirection": "pixel reproduction",
+          "currentVersion": 1
+        },
+        "cc4b7c21-3365-48d6-a2e8-dcf5e1d8b58c": {
+          "title": "Quiet header",
+          "visualDirection": "search leads, chips leave header, grouped sidebar, shared inset",
+          "parentDraftId": "3b96bb14-8c73-4778-a3a4-25a9693a6827",
+          "currentVersion": 1
+        },
+        "4275fc62-29ed-40fe-a536-92f33f3db107": {
+          "title": "Chip row",
+          "visualDirection": "faction scroll row under header, grouped sidebar, shared inset",
+          "parentDraftId": "3b96bb14-8c73-4778-a3a4-25a9693a6827",
+          "currentVersion": 1
+        }
+      }
+    }
+  }
+}

@@ -160,9 +160,88 @@ describe("mapSnapshot", () => {
   });
 
   it("records research requires", () => {
-    assert.equal(mapped.research.length, 1);
-    assert.equal(mapped.research[0].slug, "m4a1-usa");
-    assert.deepEqual(mapped.research[0].requires, ["m3-usa"]);
-    assert.deepEqual(mapped.research[0].unitSlugs, ["conquest-usa-late-m4a1"]);
+    const node = mapped.research.find((row) => row.slug === "m4a1-usa");
+    const stub = mapped.research.find((row) => row.slug === "m3-usa");
+    assert.ok(node);
+    assert.deepEqual(node.requires, ["m3-usa"]);
+    assert.deepEqual(node.unitSlugs, ["conquest-usa-late-m4a1"]);
+    assert.ok(stub);
+    assert.equal(stub.factionSlug, "usa");
+    assert.equal(stub.name, "M3 Usa");
+    assert.deepEqual(stub.requires, []);
+    assert.deepEqual(stub.unitSlugs, []);
+  });
+
+  it("keeps one record per faction and game id", () => {
+    const mapped = mapSnapshot({
+      units: [
+        {
+          id: "single_officer",
+          name: "Officer",
+          roster: "early",
+          side: "eng",
+          period: "early",
+          cp: 3,
+          cost: 125,
+        },
+        {
+          id: "single_officer",
+          name: "Officer",
+          roster: "conquest",
+          side: "eng",
+          period: "mid",
+          cp: 2,
+          cost: 125,
+          research: { id: "single_officer(eng)", requires: [], costs: 1 },
+        },
+        {
+          id: "single_officer",
+          name: "Officer",
+          roster: "late",
+          side: "eng",
+          period: "late",
+          cp: 3,
+          cost: 125,
+        },
+      ],
+    });
+    assert.equal(mapped.records.length, 1);
+    assert.equal(mapped.records[0].sourceIndex, 1);
+    assert.equal(mapped.records[0].costs.find((cost) => cost.kind === "cp").amount, 2);
+  });
+
+  it("names a stub from a unit with no research", () => {
+    const mapped = mapSnapshot({
+      units: [
+        {
+          id: "single_officer",
+          name: "Officer",
+          roster: "conquest",
+          side: "eng",
+          period: "mid",
+        },
+        {
+          id: "squad_officer_con",
+          name: "Platoon HQ",
+          roster: "conquest",
+          side: "eng",
+          period: "mid",
+          research: {
+            id: "squad_officer_con(eng)",
+            side: "eng",
+            requires: ["single_officer(eng)"],
+            costs: 2,
+          },
+        },
+      ],
+    });
+    const stub = mapped.research.find((row) => row.slug === "single-officer-eng");
+    const hq = mapped.research.find((row) => row.slug === "squad-officer-con-eng");
+    assert.ok(stub);
+    assert.equal(stub.name, "Officer");
+    assert.equal(stub.researchCost, null);
+    assert.deepEqual(stub.unitSlugs, ["conquest-eng-mid-single-officer"]);
+    assert.ok(hq);
+    assert.deepEqual(hq.requires, ["single-officer-eng"]);
   });
 });

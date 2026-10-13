@@ -10,10 +10,6 @@ export const FACTIONS: FactionDef[] = [
   { slug: "ussr", nameEn: "USSR", color: "#B23A2F" },
   { slug: "usa", nameEn: "USA", color: "#4A6B3A" },
   { slug: "british", nameEn: "British Commonwealth", color: "#A8834A" },
-  { slug: "finland", nameEn: "Finland", color: "#3E6FA8" },
-  { slug: "japan", nameEn: "Japan", color: "#C9C2B0" },
-  { slug: "canada", nameEn: "Canada", color: "#B85C38" },
-  { slug: "poland", nameEn: "Poland", color: "#8C3A4A" },
 ];
 
 export const FACTION_COLORS: Record<string, string> = Object.fromEntries(

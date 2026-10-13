@@ -50,3 +50,6 @@ next-env.d.ts
 .vscode/
 *.swp
 .playwright-mcp/
+
+# superdesign temporary component html
+.superdesign/tmp/

@@ -5,10 +5,14 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Providers } from "@/components/providers";
 import { TopBar } from "@/components/layout/top-bar";
-import { SteamBanner } from "@/components/layout/steam-banner";
-import { DesktopSidebar } from "@/components/layout/desktop-sidebar";
+import { ChromeBar } from "@/components/layout/chrome-bar";
+import {
+  DesktopSidebar,
+  desktopRailClass,
+} from "@/components/layout/desktop-sidebar";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { CompareTray } from "@/components/compare/compare-tray";
+import { RightRailOffset } from "@/components/layout/right-rail-offset";
 import {
   getCurrentGameVersion,
   getSearchIndex,
@@ -71,43 +75,36 @@ export default async function RootLayout({
     <html
       lang="en"
       className={cn(
-        "h-full",
         syneMono.variable,
         jetbrains.variable,
         stencil.variable,
       )}
     >
-      <body className="h-dvh overflow-hidden">
+      <body>
+        <style>{`@media (min-width: 48rem) { :root { --rail-left: 14rem; --shell-x: 1.5rem } }`}</style>
         <a
           href="#main"
           className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-background focus:p-2"
         >
           Skip to content
         </a>
+        <RightRailOffset />
         <Providers>
-          <div className="flex h-dvh flex-col overflow-hidden">
-            <div className="shrink-0">
-              <Suspense fallback={null}>
-                <TopBar searchIndex={searchIndex} />
-              </Suspense>
-              <SteamBanner />
-            </div>
-            <div className="flex min-h-0 flex-1 overflow-hidden">
-              <Suspense fallback={<aside className="hidden h-full w-56 shrink-0 border-r border-border md:block" />}>
-                <DesktopSidebar />
-              </Suspense>
-              <main
-                id="main"
-                className="min-h-0 min-w-0 flex-1 overflow-y-auto"
-              >
-                <div className="px-3 py-6 md:px-6 has-[[data-units-frame]]:h-full has-[[data-units-frame]]:overflow-hidden has-[[data-units-frame]]:p-0">
-                  {children}
-                </div>
-                <SiteFooter gameVersion={gameVersion?.code ?? null} />
-              </main>
-            </div>
-            <CompareTray />
+          <ChromeBar>
+            <Suspense fallback={null}>
+              <TopBar searchIndex={searchIndex} />
+            </Suspense>
+          </ChromeBar>
+          <div className="flex min-h-dvh flex-col pt-[var(--chrome-h)] pr-[var(--rail-right)] pb-[var(--tray-h,0px)] pl-[var(--rail-left)]">
+            <Suspense fallback={<aside className={desktopRailClass} />}>
+              <DesktopSidebar />
+            </Suspense>
+            <main id="main" className="flex flex-1 flex-col">
+              <div className="flex-1 px-[var(--shell-x)] py-6">{children}</div>
+              <SiteFooter gameVersion={gameVersion?.code ?? null} />
+            </main>
           </div>
+          <CompareTray />
         </Providers>
       </body>
     </html>

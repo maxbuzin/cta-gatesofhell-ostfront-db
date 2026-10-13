@@ -21,6 +21,8 @@ import {
   type StatGroup,
 } from "@/lib/stats/definitions";
 import { formatStat } from "@/lib/safe";
+import { InlineEdit } from "@/components/edit/inline-edit";
+import type { StatField } from "@/lib/local-edit-guard";
 import {
   Tooltip,
   TooltipContent,
@@ -55,6 +57,7 @@ export function StatCell({
   max = 100,
   className,
   best,
+  edit = null,
 }: {
   value: number | string | null | undefined;
   label: string;
@@ -66,6 +69,7 @@ export function StatCell({
   max?: number;
   className?: string;
   best?: boolean;
+  edit?: { slug: string; field: StatField } | null;
 }) {
   const num = typeof value === "number" ? value : null;
   let intensity = 0.35;
@@ -89,7 +93,17 @@ export function StatCell({
         >
           {Icon ? <Icon className="size-3.5 opacity-70" aria-hidden /> : null}
           <span>
-            {display}
+            {edit ? (
+              <InlineEdit
+                label={label}
+                kind="number"
+                value={num}
+                display={display}
+                save={{ kind: "stat", slug: edit.slug, field: edit.field }}
+              />
+            ) : (
+              display
+            )}
             {display !== "--" && unit ? (
               <span className="ml-0.5 text-xs text-muted-foreground">{unit}</span>
             ) : null}
