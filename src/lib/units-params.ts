@@ -41,7 +41,6 @@ export const unitsSearchParams = {
   sort: parseAsStringEnum([...SORT_KEYS]).withDefault("name_asc"),
   cursor: parseAsString,
   pageSize: parseAsInteger.withDefault(25),
-  view: parseAsStringEnum(["table", "cards"] as const).withDefault("table"),
   penMin: parseAsInteger,
   penMax: parseAsInteger,
   armorMin: parseAsInteger,

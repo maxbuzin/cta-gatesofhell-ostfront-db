@@ -10,9 +10,7 @@ export default function AboutPage() {
       <h1 className="page-title">About</h1>
       <div className="space-y-4 text-muted-foreground">
         <p>
-          <span className="font-display text-foreground tracking-wide">
-            OSTFRONT DB
-          </span>{" "}
+          <span className="font-semibold text-foreground">OSTFRONT DB</span>{" "}
           is a free, open-source, no-login unit database for{" "}
           <em>Call to Arms – Gates of Hell: Ostfront</em>. It is a turbo
           spreadsheet: search units, read stats, compare side by side, and

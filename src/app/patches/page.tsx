@@ -31,7 +31,7 @@ export default async function PatchesPage() {
             return (
               <li key={v.id} className="space-y-1">
                 <span className="absolute -left-1.5 mt-1.5 size-3 rounded-full bg-primary" />
-                <h2 className="font-display text-xl tracking-wide">
+                <h2 className="text-lg font-semibold">
                   v{v.code}
                   {v.isCurrent ? (
                     <span className="ml-2 text-xs text-brass">current</span>

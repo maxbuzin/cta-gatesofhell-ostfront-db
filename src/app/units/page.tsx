@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { FilterPanel } from "@/components/units/filter-panel";
-import { UnitsView } from "@/components/units/units-view";
 import { ColorLegend } from "@/components/units/color-legend";
+import { UnitsBrowse } from "@/components/units/units-browse";
+import { UnitsView } from "@/components/units/units-view";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   getFactions,
@@ -40,23 +40,14 @@ async function UnitsContent({
   ]);
 
   return (
-    <div className="mx-auto flex max-w-7xl flex-col gap-6 lg:flex-row">
-      <div className="w-full shrink-0 lg:w-64">
-        <FilterPanel factions={factions} />
-      </div>
-      <div className="min-w-0 flex-1 space-y-4">
-        <div className="space-y-2">
-          <h1 className="page-title">Units</h1>
-          <ColorLegend />
-        </div>
-        <UnitsView
-          rows={result.rows}
-          total={result.total}
-          pageSize={filters.pageSize}
-          nextCursor={result.nextCursor}
-        />
-      </div>
-    </div>
+    <UnitsBrowse factions={factions} legend={<ColorLegend />}>
+      <UnitsView
+        rows={result.rows}
+        total={result.total}
+        pageSize={filters.pageSize}
+        nextCursor={result.nextCursor}
+      />
+    </UnitsBrowse>
   );
 }
 

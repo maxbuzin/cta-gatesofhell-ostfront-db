@@ -123,7 +123,7 @@ async function UnitDetailContent({ params }: Props) {
     key: `u${i}`,
     label: ammo.name,
     color: safeCssColor(
-      ["#c0443a", "#d4a43a", "#3e6fa8", "#7a8b5c"][i % 4],
+      ["#c0443a", "#b89a55", "#3e6fa8", "#7a8b5c"][i % 4],
     ),
   }));
 

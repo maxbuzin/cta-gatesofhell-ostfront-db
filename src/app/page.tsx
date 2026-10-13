@@ -13,15 +13,16 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import {
-  getCurrentGameVersion,
   getFactions,
   getPopularComparisons,
+  getSourcesList,
   getUnitCountsByType,
 } from "@/lib/db/queries/units";
 import { EmptyState } from "@/components/units/empty-state";
 import { FACTIONS, FACTION_COLORS } from "@/lib/factions";
 import { safeCssColor } from "@/lib/safe-css-color";
 import { FactionChips } from "@/components/layout/faction-chips";
+import { FanNotice } from "@/components/home/fan-notice";
 import { HomeSearch } from "@/components/home/home-search";
 import { withQueryFallback } from "@/lib/safe-query";
 
@@ -56,8 +57,31 @@ const TILES = [
   { code: "infantry_squad", label: "Infantry" },
 ] as const;
 
+function formatUpdated(value: Date | string | null | undefined) {
+  if (!value) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  const month = date.toLocaleString("en-GB", {
+    month: "short",
+    timeZone: "UTC",
+  });
+  return `${date.getUTCDate()} ${month} ${date.getUTCFullYear()}`;
+}
+
+function newestUpdated(sources: { retrievedAt: Date | string | null }[]) {
+  let best: Date | string | null = null;
+  let bestTime = -1;
+  for (const source of sources) {
+    const time = new Date(source.retrievedAt ?? "").getTime();
+    if (Number.isNaN(time) || time <= bestTime) continue;
+    bestTime = time;
+    best = source.retrievedAt;
+  }
+  return formatUpdated(best);
+}
+
 export default async function HomePage() {
-  const [counts, factions, popular, version] = await Promise.all([
+  const [counts, factions, popular, sources] = await Promise.all([
     withQueryFallback(
       () => getUnitCountsByType(),
       [],
@@ -69,11 +93,7 @@ export default async function HomePage() {
       [],
       "Failed to load popular comparisons",
     ),
-    withQueryFallback(
-      () => getCurrentGameVersion(),
-      null,
-      "Failed to load game version",
-    ),
+    withQueryFallback(() => getSourcesList(), [], "Failed to load sources"),
   ]);
 
   const countMap = new Map(counts.map((c) => [c.code, c]));
@@ -84,8 +104,9 @@ export default async function HomePage() {
   }));
 
   return (
-    <div className="mx-auto max-w-6xl space-y-12">
-      <section className="relative overflow-hidden rounded-md border border-border bg-surface paper-grain px-4 py-12 md:px-10 md:py-16">
+    <div className="space-y-8">
+      <FanNotice updated={newestUpdated(sources)} />
+      <section className="relative overflow-hidden rounded-md border border-border bg-surface px-4 py-8 md:px-10 md:py-10">
         <div className="relative z-10 mx-auto max-w-2xl space-y-5 text-center">
           <p className="font-display text-4xl tracking-wider text-foreground md:text-5xl">
             OSTFRONT DB
@@ -101,13 +122,17 @@ export default async function HomePage() {
                 <Link
                   key={f.slug}
                   href={`/units?faction=${f.slug}`}
-                  className="rounded-md border border-border px-3 py-1.5 text-sm transition-colors duration-150 hover:border-primary"
-                  style={{
-                    borderColor: safeCssColor(
-                      f.color || FACTION_COLORS[f.slug],
-                    ),
-                  }}
+                  className="hit-row inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-sm transition-colors duration-150 hover:border-primary"
                 >
+                  <span
+                    className="size-2 shrink-0 rounded-sm"
+                    style={{
+                      backgroundColor: safeCssColor(
+                        f.color || FACTION_COLORS[f.slug],
+                      ),
+                    }}
+                    aria-hidden
+                  />
                   {FACTIONS.find((d) => d.slug === f.slug)?.nameEn || f.nameEn}
                 </Link>
               ))}
@@ -118,16 +143,16 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="space-y-4">
-        <h2 className="page-title text-2xl md:text-3xl">Categories</h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <section className="space-y-3">
+        <h2 className="section-label">Categories</h2>
+        <div className="grid grid-cols-2 gap-2 lg:grid-cols-5">
           {tiles.map((tile) => {
             const Icon = TYPE_ICONS[tile.code] || Container;
             return (
               <Link
                 key={tile.code}
                 href={`/units?type=${tile.code}`}
-                className="flex flex-col gap-2 rounded-md border border-border bg-card p-4 transition-colors duration-150 hover:border-primary/50"
+                className="flex flex-col gap-2 rounded-md border border-border bg-card p-3 transition-colors duration-150 hover:border-primary/50"
               >
                 <Icon className="size-5 text-primary" aria-hidden />
                 <span className="text-sm font-medium">{tile.label}</span>
@@ -140,8 +165,8 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="space-y-4">
-        <h2 className="page-title text-2xl md:text-3xl">Popular comparisons</h2>
+      <section className="space-y-3">
+        <h2 className="section-label">Popular comparisons</h2>
         {popular.length === 0 ? (
           <EmptyState
             title="No popular comparisons yet"
@@ -158,29 +183,6 @@ export default async function HomePage() {
                 {p.title}
               </Link>
             ))}
-          </div>
-        )}
-      </section>
-
-      <section className="space-y-4">
-        <h2 className="page-title text-2xl md:text-3xl">Latest patch</h2>
-        {!version ? (
-          <EmptyState
-            title="No patch data yet"
-            description="The current game version will appear after the first import."
-          />
-        ) : (
-          <div className="rounded-md border border-border bg-card p-4">
-            <p className="font-display text-xl">Game v{version.code}</p>
-            <p className="text-sm text-muted-foreground">
-              {version.name || "--"} · Released {version.releasedAt || "--"}
-            </p>
-            <Link
-              href="/patches"
-              className="mt-2 inline-block text-sm text-primary hover:underline"
-            >
-              View patch notes
-            </Link>
           </div>
         )}
       </section>

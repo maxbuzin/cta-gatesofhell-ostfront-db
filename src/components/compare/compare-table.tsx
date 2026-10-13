@@ -24,10 +24,22 @@ type CompareUnit = {
     visionRangeM: number | null;
     startingVeterancy: number | null;
   } | null;
+  maxRangeM: number | null;
   costCp: number | null;
   costResources: number | null;
   squadSize: number | null;
 };
+
+function shownRange(u: CompareUnit) {
+  return u.maxRangeM ?? u.stats?.rangeM ?? null;
+}
+
+function apRange(u: CompareUnit) {
+  const ap = u.stats?.rangeM ?? null;
+  const max = shownRange(u);
+  if (ap == null || max == null || ap === max) return null;
+  return ap;
+}
 
 const ROWS: { key: string; def: StatDef; get: (u: CompareUnit) => number | null }[] = [
   { key: "costCp", def: STATS.costCp, get: (u) => u.costCp },
@@ -38,7 +50,12 @@ const ROWS: { key: string; def: StatDef; get: (u: CompareUnit) => number | null 
   { key: "reloadS", def: STATS.reloadS, get: (u) => u.stats?.reloadS ?? null },
   { key: "penetrationMm", def: STATS.penetrationMm, get: (u) => u.stats?.penetrationMm ?? null },
   { key: "caliberMm", def: STATS.caliberMm, get: (u) => u.stats?.caliberMm ?? null },
-  { key: "rangeM", def: STATS.rangeM, get: (u) => u.stats?.rangeM ?? null },
+  { key: "rangeM", def: STATS.rangeM, get: shownRange },
+  {
+    key: "apRangeM",
+    def: { ...STATS.rangeM, key: "apRangeM", label: "AP range" },
+    get: apRange,
+  },
   { key: "visionRangeM", def: STATS.visionRangeM, get: (u) => u.stats?.visionRangeM ?? null },
   { key: "startingVeterancy", def: STATS.startingVeterancy, get: (u) => u.stats?.startingVeterancy ?? null },
 ];
@@ -107,8 +124,9 @@ export function CompareTable({ units }: { units: CompareUnit[] }) {
           <tbody>
             {[...families.entries()].map(([family, rows]) => {
               const visible = rows.filter((row) => {
-                if (!diffOnly) return true;
                 const vals = units.map((u) => row.get(u));
+                if (vals.every((v) => v === null)) return false;
+                if (!diffOnly) return true;
                 const first = vals.find((v) => v !== null);
                 return vals.some((v) => v !== first);
               });
@@ -138,7 +156,7 @@ function FragmentRows({
       <tr>
         <td
           colSpan={units.length + 1}
-          className="bg-muted/40 px-3 py-2 font-display text-xs tracking-wider uppercase"
+          className="bg-muted/40 px-3 py-2 font-sans text-xs font-medium tracking-wide text-muted-foreground uppercase"
         >
           {family}
         </td>

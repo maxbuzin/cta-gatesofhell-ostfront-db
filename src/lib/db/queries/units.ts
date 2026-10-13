@@ -47,6 +47,20 @@ import {
   sources,
 } from "@/lib/db/schema";
 import { escapeLike } from "@/lib/safe";
+import {
+  sheetCounts,
+  sheetFaction,
+  sheetFactionCounts,
+  sheetFactions,
+  sheetList,
+  sheetSearch,
+  sheetSourceList,
+  sheetSpecialties,
+  sheetUnit,
+  sheetUnitsBySlugs,
+  sheetVersion,
+  sheetVersions,
+} from "@/lib/sheet-fallback";
 
 export type UnitListFilters = {
   q?: string;
@@ -128,7 +142,7 @@ export async function getUnitCountsByType(): Promise<
   cacheLife("max");
   cacheTag("units", "home");
   const db = getDb();
-  if (!db) return [];
+  if (!db) return sheetCounts();
   return await db
     .select({
       code: unitTypes.code,
@@ -146,7 +160,7 @@ export async function getFactions() {
   cacheLife("max");
   cacheTag("factions");
   const db = getDb();
-  if (!db) return [];
+  if (!db) return sheetFactions();
   return await db.select().from(factions).orderBy(asc(factions.sortOrder));
 }
 
@@ -155,7 +169,7 @@ export async function getFactionBySlug(slug: string) {
   cacheLife("max");
   cacheTag("factions", `faction:${slug}`);
   const db = getDb();
-  if (!db) return null;
+  if (!db) return sheetFaction(slug);
   const [row] = await db
     .select()
     .from(factions)
@@ -169,7 +183,7 @@ export async function getSpecialties() {
   cacheLife("max");
   cacheTag("units");
   const db = getDb();
-  if (!db) return [];
+  if (!db) return sheetSpecialties();
   return await db.select().from(specialties).orderBy(asc(specialties.nameEn));
 }
 
@@ -178,7 +192,7 @@ export async function getCurrentGameVersion() {
   cacheLife("max");
   cacheTag("patches");
   const db = getDb();
-  if (!db) return null;
+  if (!db) return sheetVersion();
   const [row] = await db
     .select()
     .from(gameVersions)
@@ -204,7 +218,7 @@ export async function getSourcesList() {
   cacheLife("max");
   cacheTag("sources");
   const db = getDb();
-  if (!db) return [];
+  if (!db) return sheetSourceList();
   return await db.select().from(sources).orderBy(asc(sources.title));
 }
 
@@ -213,7 +227,7 @@ export async function getGameVersions() {
   cacheLife("max");
   cacheTag("patches");
   const db = getDb();
-  if (!db) return [];
+  if (!db) return sheetVersions();
   return await db
     .select()
     .from(gameVersions)
@@ -225,9 +239,7 @@ export async function listUnits(filters: UnitListFilters) {
   cacheLife("max");
   cacheTag("units");
   const db = getDb();
-  if (!db) {
-    return { rows: [], total: 0, nextCursor: null as string | null };
-  }
+  if (!db) return sheetList(filters);
 
   const pageSize = Math.min(50, Math.max(1, filters.pageSize ?? 25));
   const sortKey = (
@@ -530,7 +542,7 @@ export async function getUnitBySlug(slug: string) {
   cacheLife("max");
   cacheTag("units", `unit:${slug}`);
   const db = getDb();
-  if (!db) return null;
+  if (!db) return sheetUnit(slug);
   const versionId = await currentVersionId();
   const [row] = await db
     .select({
@@ -682,7 +694,7 @@ export async function getUnitsBySlugs(slugs: string[]) {
   ].slice(0, 4);
   if (unique.length === 0) return [];
   const db = getDb();
-  if (!db) return [];
+  if (!db) return sheetUnitsBySlugs(unique);
   const found = await db
     .select({ slug: units.slug })
     .from(units)
@@ -700,7 +712,7 @@ export async function getSearchIndex() {
   cacheLife("max");
   cacheTag("units", "home");
   const db = getDb();
-  if (!db) return [];
+  if (!db) return sheetSearch();
   return await db
     .select({
       id: units.id,
@@ -779,7 +791,7 @@ export async function getFactionUnitCounts(factionId: number) {
   cacheLife("max");
   cacheTag("factions");
   const db = getDb();
-  if (!db) return [];
+  if (!db) return sheetFactionCounts(factionId);
   return await db
     .select({
       typeCode: unitTypes.code,

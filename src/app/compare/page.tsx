@@ -60,6 +60,10 @@ async function CompareContent({
           startingVeterancy: u!.stats.startingVeterancy,
         }
       : null,
+    maxRangeM: u!.weapons.reduce<number | null>((max, w) => {
+      if (w.maxRangeM == null) return max;
+      return max == null ? w.maxRangeM : Math.max(max, w.maxRangeM);
+    }, null),
     costCp: u!.costs.find((c) => c.kind === "cp")?.amount ?? null,
     costResources: u!.costs.find((c) => c.kind === "resources")?.amount ?? null,
     squadSize: u!.squadSize,
@@ -70,7 +74,7 @@ async function CompareContent({
     key: `u${i}`,
     label: u!.name,
     color: safeCssColor(
-      ["#c0443a", "#d4a43a", "#3e6fa8", "#7a8b5c"][i % 4],
+      ["#c0443a", "#b89a55", "#3e6fa8", "#7a8b5c"][i % 4],
     ),
   }));
 
@@ -100,7 +104,7 @@ async function CompareContent({
       </div>
       <CompareTable units={compareUnits} />
       <section className="space-y-2">
-        <h2 className="font-display text-xl tracking-wide">Penetration overlay</h2>
+        <h2 className="section-label">Penetration overlay</h2>
         <PenetrationChart data={chartData} series={series} />
       </section>
     </div>

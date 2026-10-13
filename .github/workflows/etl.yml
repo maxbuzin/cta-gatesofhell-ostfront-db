@@ -15,8 +15,9 @@ permissions:
 
 jobs:
   etl:
-    name: Run ETL (stub)
+    name: Import Google Sheet
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     environment: production-data
     steps:
       - name: Checkout
@@ -24,12 +25,20 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Stub notice
+      - name: Setup pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: ".nvmrc"
+          cache: "pnpm"
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Import
         env:
-          PATCH: ${{ inputs.patch }}
-        run: |
-          echo "ETL pipeline is not implemented in v1."
-          echo "When ready, use DATABASE_URL_ETL from this environment only."
-          if [ -n "${PATCH}" ]; then
-            echo "Requested patch=${PATCH}"
-          fi
+          DATABASE_URL_ETL: ${{ secrets.DATABASE_URL_ETL }}
+          PATCH: ${{ github.event.inputs.patch || 'sheet' }}
+        run: pnpm etl

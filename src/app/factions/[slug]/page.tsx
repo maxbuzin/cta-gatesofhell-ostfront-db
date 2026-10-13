@@ -76,7 +76,7 @@ async function FactionContent({ params }: Props) {
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div
-        className="rounded-md border border-border px-6 py-10 paper-grain"
+        className="rounded-md border border-border px-6 py-8"
         style={{
           borderColor: safeCssColor(
             faction.color || FACTION_COLORS[faction.slug],
@@ -115,7 +115,7 @@ async function FactionContent({ params }: Props) {
       </div>
 
       <section className="space-y-2">
-        <h2 className="font-display text-xl tracking-wide">Units by type</h2>
+        <h2 className="section-label">Units by type</h2>
         {counts.length === 0 ? (
           <EmptyState title="No units yet" />
         ) : (
@@ -124,7 +124,7 @@ async function FactionContent({ params }: Props) {
       </section>
 
       <section className="space-y-2">
-        <h2 className="font-display text-xl tracking-wide">Signature units</h2>
+        <h2 className="section-label">Signature units</h2>
         <EmptyState title="No signature units yet" />
       </section>
 

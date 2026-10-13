@@ -23,13 +23,17 @@ export function FactionChips({
           key={f.slug}
           href={`/units?faction=${f.slug}`}
           className={cn(
-            "rounded border transition-colors duration-150 hover:border-primary",
+            "hit-row inline-flex items-center gap-1.5 rounded border border-border transition-colors duration-150 hover:border-primary",
             size === "sm"
               ? "px-1.5 py-0.5 text-[11px] leading-tight"
               : "px-3 py-1.5 text-sm",
           )}
-          style={{ borderColor: safeCssColor(f.color) }}
         >
+          <span
+            className="size-2 shrink-0 rounded-sm"
+            style={{ backgroundColor: safeCssColor(f.color) }}
+            aria-hidden
+          />
           {f.nameEn}
         </Link>
       ))}

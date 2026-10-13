@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { Crosshair } from "lucide-react";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { CommandSearch, type SearchIndexItem } from "@/components/search/command-search";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { FactionChips } from "@/components/layout/faction-chips";
+import { BrandLogo } from "@/components/layout/brand-logo";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 function GitHubIcon({ className }: { className?: string }) {
@@ -16,27 +16,25 @@ function GitHubIcon({ className }: { className?: string }) {
 
 export function TopBar({ searchIndex }: { searchIndex: SearchIndexItem[] }) {
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur paper-grain">
+    <header className="relative z-40 border-b border-border bg-background pt-[env(safe-area-inset-top)]">
       <div className="flex h-14 items-center gap-2 px-3 md:px-4">
-        <MobileNav />
-        <Link
-          href="/"
-          className="flex shrink-0 items-center gap-2 transition-opacity duration-150 hover:opacity-90"
-        >
-          <Crosshair className="size-5 text-brass" aria-hidden />
-          <span className="font-display text-lg tracking-wider text-foreground">
-            OSTFRONT DB
-          </span>
-        </Link>
-        <div className="ml-2 hidden min-w-0 flex-1 items-center gap-3 lg:flex">
-          <CommandSearch index={searchIndex} />
-          <FactionChips className="shrink-0" />
-        </div>
-        <div className="ml-auto flex items-center gap-1 lg:ml-0">
-          <div className="lg:hidden">
-            <CommandSearch index={searchIndex} />
-          </div>
-          <ThemeToggle />
+        <div className="relative z-10 flex items-center gap-2 self-stretch bg-background">
+          <MobileNav />
+          <Link
+            href="/"
+            className="flex shrink-0 items-center gap-2 transition-opacity duration-150 hover:opacity-90"
+          >
+            <BrandLogo />
+            <span className="font-display text-lg tracking-wider text-foreground">
+              OSTFRONT DB
+            </span>
+          </Link>
+          <Badge
+            variant="outline"
+            className="hidden border-brass/60 px-2 py-0.5 text-[10px] tracking-widest text-brass uppercase sm:inline-flex"
+          >
+            Non-official website
+          </Badge>
           <Button variant="ghost" size="icon" asChild>
             <a
               href="https://github.com/maxbuzin/cta-gatesofhell-ostfront-db"
@@ -48,9 +46,12 @@ export function TopBar({ searchIndex }: { searchIndex: SearchIndexItem[] }) {
             </a>
           </Button>
         </div>
+        <div className="relative z-10 ml-auto flex shrink-0 items-center self-stretch bg-background md:w-72">
+          <CommandSearch index={searchIndex} />
+        </div>
       </div>
-      <div className="border-t border-border px-3 py-1.5 lg:hidden">
-        <FactionChips />
+      <div className="pointer-events-none absolute inset-x-0 top-[env(safe-area-inset-top)] hidden h-14 items-center justify-center lg:flex">
+        <FactionChips className="pointer-events-auto flex-nowrap" />
       </div>
     </header>
   );

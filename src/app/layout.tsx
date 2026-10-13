@@ -1,10 +1,11 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
-import { Black_Ops_One, Inter, JetBrains_Mono } from "next/font/google";
+import { Black_Ops_One, JetBrains_Mono, Syne_Mono } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Providers } from "@/components/providers";
 import { TopBar } from "@/components/layout/top-bar";
+import { SteamBanner } from "@/components/layout/steam-banner";
 import { DesktopSidebar } from "@/components/layout/desktop-sidebar";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { CompareTray } from "@/components/compare/compare-tray";
@@ -14,9 +15,10 @@ import {
 } from "@/lib/db/queries/units";
 import { withQueryFallback } from "@/lib/safe-query";
 
-const inter = Inter({
+const syneMono = Syne_Mono({
+  weight: "400",
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-syne-mono",
   display: "swap",
 });
 
@@ -32,6 +34,12 @@ const stencil = Black_Ops_One({
   variable: "--font-stencil",
   display: "swap",
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
 
 export const metadata: Metadata = {
   title: {
@@ -64,13 +72,12 @@ export default async function RootLayout({
       lang="en"
       className={cn(
         "h-full",
-        inter.variable,
+        syneMono.variable,
         jetbrains.variable,
         stencil.variable,
       )}
-      suppressHydrationWarning
     >
-      <body className="flex min-h-full flex-col">
+      <body className="h-dvh overflow-hidden">
         <a
           href="#main"
           className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-background focus:p-2"
@@ -78,19 +85,29 @@ export default async function RootLayout({
           Skip to content
         </a>
         <Providers>
-          <Suspense fallback={null}>
-            <TopBar searchIndex={searchIndex} />
-          </Suspense>
-          <div className="flex flex-1">
-            <Suspense fallback={<aside className="hidden w-56 shrink-0 border-r border-border md:block" />}>
-              <DesktopSidebar />
-            </Suspense>
-            <main id="main" className="min-w-0 flex-1 px-3 py-6 pb-24 md:px-6">
-              {children}
-            </main>
+          <div className="flex h-dvh flex-col overflow-hidden">
+            <div className="shrink-0">
+              <Suspense fallback={null}>
+                <TopBar searchIndex={searchIndex} />
+              </Suspense>
+              <SteamBanner />
+            </div>
+            <div className="flex min-h-0 flex-1 overflow-hidden">
+              <Suspense fallback={<aside className="hidden h-full w-56 shrink-0 border-r border-border md:block" />}>
+                <DesktopSidebar />
+              </Suspense>
+              <main
+                id="main"
+                className="min-h-0 min-w-0 flex-1 overflow-y-auto"
+              >
+                <div className="px-3 py-6 md:px-6 has-[[data-units-frame]]:h-full has-[[data-units-frame]]:overflow-hidden has-[[data-units-frame]]:p-0">
+                  {children}
+                </div>
+                <SiteFooter gameVersion={gameVersion?.code ?? null} />
+              </main>
+            </div>
+            <CompareTray />
           </div>
-          <SiteFooter gameVersion={gameVersion?.code ?? null} />
-          <CompareTray />
         </Providers>
       </body>
     </html>

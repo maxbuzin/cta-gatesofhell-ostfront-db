@@ -42,32 +42,87 @@ const TYPES = [
   { code: "infantry_squad", name: "Infantry" },
 ];
 
-type FactionOpt = { slug: string; nameEn: string; color: string | null };
+export type FactionOpt = { slug: string; nameEn: string; color: string | null };
+
+function byLabel<T>(label: (item: T) => string) {
+  return (a: T, b: T) =>
+    label(a).localeCompare(label(b), "en", { sensitivity: "base" });
+}
+
+const unitFilterParsers = {
+  q: parseAsString.withDefault(""),
+  faction: parseAsArrayOf(parseAsString).withDefault([]),
+  type: parseAsArrayOf(parseAsString).withDefault([]),
+  specialty: parseAsArrayOf(parseAsString).withDefault([]),
+  penMin: parseAsInteger,
+  penMax: parseAsInteger,
+  armorMin: parseAsInteger,
+  armorMax: parseAsInteger,
+  speedMin: parseAsInteger,
+  speedMax: parseAsInteger,
+  rangeMin: parseAsInteger,
+  rangeMax: parseAsInteger,
+  helmetMin: parseAsInteger,
+  helmetMax: parseAsInteger,
+  shieldMin: parseAsInteger,
+  shieldMax: parseAsInteger,
+  tier: parseAsArrayOf(parseAsInteger).withDefault([]),
+  cursor: parseAsString,
+};
+
+export function useUnitFilters() {
+  return useQueryStates(unitFilterParsers, {
+    history: "replace",
+    shallow: false,
+  });
+}
+
+export function countActiveFilters(params: {
+  q: string;
+  faction: string[];
+  type: string[];
+  specialty: string[];
+  tier: number[];
+  penMin: number | null;
+  penMax: number | null;
+  armorMin: number | null;
+  armorMax: number | null;
+  speedMin: number | null;
+  speedMax: number | null;
+  rangeMin: number | null;
+  rangeMax: number | null;
+  helmetMin: number | null;
+  helmetMax: number | null;
+  shieldMin: number | null;
+  shieldMax: number | null;
+}) {
+  const ranges = [
+    params.penMin,
+    params.penMax,
+    params.armorMin,
+    params.armorMax,
+    params.speedMin,
+    params.speedMax,
+    params.rangeMin,
+    params.rangeMax,
+    params.helmetMin,
+    params.helmetMax,
+    params.shieldMin,
+    params.shieldMax,
+  ].filter((value) => value !== null).length;
+
+  return (
+    (params.q.trim() ? 1 : 0) +
+    params.faction.length +
+    params.type.length +
+    params.specialty.length +
+    params.tier.length +
+    ranges
+  );
+}
 
 export function FilterPanel({ factions }: { factions: FactionOpt[] }) {
-  const [params, setParams] = useQueryStates(
-    {
-      q: parseAsString.withDefault(""),
-      faction: parseAsArrayOf(parseAsString).withDefault([]),
-      type: parseAsArrayOf(parseAsString).withDefault([]),
-      specialty: parseAsArrayOf(parseAsString).withDefault([]),
-      penMin: parseAsInteger,
-      penMax: parseAsInteger,
-      armorMin: parseAsInteger,
-      armorMax: parseAsInteger,
-      speedMin: parseAsInteger,
-      speedMax: parseAsInteger,
-      rangeMin: parseAsInteger,
-      rangeMax: parseAsInteger,
-      helmetMin: parseAsInteger,
-      helmetMax: parseAsInteger,
-      shieldMin: parseAsInteger,
-      shieldMax: parseAsInteger,
-      tier: parseAsArrayOf(parseAsInteger).withDefault([]),
-      cursor: parseAsString,
-    },
-    { history: "replace", shallow: false },
-  );
+  const [params, setParams] = useUnitFilters();
 
   const toggle = (key: "faction" | "type" | "specialty", value: string) => {
     const cur = params[key];
@@ -77,7 +132,7 @@ export function FilterPanel({ factions }: { factions: FactionOpt[] }) {
     void setParams({ [key]: next, cursor: null });
   };
 
-  const factionOpts =
+  const factionOpts = (
     factions.length > 0
       ? factions.map((f) => ({
           slug: f.slug,
@@ -89,10 +144,11 @@ export function FilterPanel({ factions }: { factions: FactionOpt[] }) {
           slug: f.slug,
           nameEn: f.nameEn,
           color: f.color,
-        }));
+        }))
+  ).sort(byLabel((f) => f.nameEn));
 
   return (
-    <aside className="space-y-5 rounded-md border border-border bg-card p-4">
+    <div className="space-y-5">
       <div className="space-y-2">
         <Label htmlFor="units-q">Search</Label>
         <Input
@@ -109,7 +165,7 @@ export function FilterPanel({ factions }: { factions: FactionOpt[] }) {
       <fieldset className="space-y-2">
         <legend className="text-sm font-medium">Faction</legend>
         {factionOpts.map((f) => (
-          <label key={f.slug} className="flex items-center gap-2 text-sm">
+          <label key={f.slug} className="hit-row flex items-center gap-2 text-sm">
             <Checkbox
               checked={params.faction.includes(f.slug)}
               onCheckedChange={() => toggle("faction", f.slug)}
@@ -130,23 +186,21 @@ export function FilterPanel({ factions }: { factions: FactionOpt[] }) {
 
       <fieldset className="space-y-2">
         <legend className="text-sm font-medium">Unit type</legend>
-        <div className="max-h-48 space-y-2 overflow-y-auto pr-1">
-          {TYPES.map((t) => (
-            <label key={t.code} className="flex items-center gap-2 text-sm">
-              <Checkbox
-                checked={params.type.includes(t.code)}
-                onCheckedChange={() => toggle("type", t.code)}
-              />
-              {t.name}
-            </label>
-          ))}
-        </div>
+        {[...TYPES].sort(byLabel((t) => t.name)).map((t) => (
+          <label key={t.code} className="hit-row flex items-center gap-2 text-sm">
+            <Checkbox
+              checked={params.type.includes(t.code)}
+              onCheckedChange={() => toggle("type", t.code)}
+            />
+            {t.name}
+          </label>
+        ))}
       </fieldset>
 
       <fieldset className="space-y-2">
         <legend className="text-sm font-medium">Main Specialty</legend>
-        {SPECIALTIES.map((s) => (
-          <label key={s.slug} className="flex items-center gap-2 text-sm">
+        {[...SPECIALTIES].sort(byLabel((s) => s.name)).map((s) => (
+          <label key={s.slug} className="hit-row flex items-center gap-2 text-sm">
             <Checkbox
               checked={params.specialty.includes(s.slug)}
               onCheckedChange={() => toggle("specialty", s.slug)}
@@ -242,6 +296,6 @@ export function FilterPanel({ factions }: { factions: FactionOpt[] }) {
       >
         Reset filters
       </Button>
-    </aside>
+    </div>
   );
 }

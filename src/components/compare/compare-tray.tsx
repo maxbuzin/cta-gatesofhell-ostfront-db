@@ -13,7 +13,8 @@ export function CompareTray() {
 
   return (
     <div
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-surface/95 px-3 py-3 shadow-lg backdrop-blur transition-transform duration-200"
+      data-compare-tray
+      className="shrink-0 border-t border-border bg-surface px-3 py-3"
       role="region"
       aria-label="Compare tray"
     >
@@ -30,7 +31,7 @@ export function CompareTray() {
               <span className="max-w-36 truncate">{item.name}</span>
               <button
                 type="button"
-                className="rounded p-0.5 text-muted-foreground hover:text-foreground"
+                className="hit-row inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground"
                 aria-label={`Remove ${item.name}`}
                 onClick={() => remove(item.slug)}
               >
