@@ -54,6 +54,9 @@ const nextConfig: NextConfig = {
     // Local placeholders only. No remotePatterns (security-p0 #17).
     formats: ["image/avif", "image/webp"],
   },
+  outputFileTracingIncludes: {
+    "/*": ["./data/snapshots/game-units.json"],
+  },
   turbopack: {
     rules: {
       "*.css": {

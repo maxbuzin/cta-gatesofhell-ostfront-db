@@ -13,7 +13,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-strip-types --test scripts/test-*.mjs",
-    "etl": "node --experimental-strip-types etl/import-sheet.mjs",
+    "etl": "node --experimental-strip-types etl/import-snapshot.mjs",
+    "etl:sheet": "node --experimental-strip-types etl/import-sheet.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node -e \"if(!process.env.DATABASE_URL_OWNER){console.error('DATABASE_URL_OWNER required — run manually on Max machine only; never CI/Vercel');process.exit(1)}\" && drizzle-kit migrate",
     "db:studio": "node -e \"if(!process.env.DATABASE_URL_OWNER){console.error('DATABASE_URL_OWNER required');process.exit(1)}\" && drizzle-kit studio"

@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   etl:
-    name: Import Google Sheet
+    name: Import game snapshot
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: production-data
@@ -40,5 +40,5 @@ jobs:
       - name: Import
         env:
           DATABASE_URL_ETL: ${{ secrets.DATABASE_URL_ETL }}
-          PATCH: ${{ github.event.inputs.patch || 'sheet' }}
+          PATCH: ${{ github.event.inputs.patch || 'game' }}
         run: pnpm etl

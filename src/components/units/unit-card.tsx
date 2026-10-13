@@ -36,6 +36,8 @@ export type UnitListRow = {
   sniperRifles: number | null;
   costCp: number | null;
   costResources: number | null;
+  roster: string | null;
+  period: string | null;
   specialties: { slug: string; nameEn: string }[];
 };
 
@@ -99,6 +101,13 @@ function UnitStats({ unit }: { unit: UnitListRow }) {
   );
 }
 
+function rosterLabel(unit: UnitListRow) {
+  if (unit.roster && unit.period && unit.roster !== unit.period) {
+    return `${unit.roster} · ${unit.period}`;
+  }
+  return unit.roster || unit.period || "";
+}
+
 export function UnitCard({ unit }: { unit: UnitListRow }) {
   const notes = unit.notes?.trim();
   const specialties = unit.specialties.map((s) => s.nameEn).join(" · ");
@@ -127,6 +136,9 @@ export function UnitCard({ unit }: { unit: UnitListRow }) {
             color={unit.factionColor}
           />
           <span className="text-sm text-muted-foreground">{unit.typeName}</span>
+          {rosterLabel(unit) ? (
+            <span className="text-sm text-muted-foreground">{rosterLabel(unit)}</span>
+          ) : null}
         </div>
       </div>
       {specialties ? (
