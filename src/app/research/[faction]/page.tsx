@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { notFound } from "next/navigation";
 import { getFactions, getResearchTree, listResearchChoices } from "@/lib/db/queries/units";
 import { editsOpen } from "@/lib/local-edit";
 import { AddNew } from "@/components/edit/add-new";
@@ -10,7 +11,7 @@ import { ResearchTreeClient } from "@/components/research/research-tree-client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { withQueryFallback } from "@/lib/safe-query";
 import { isKnownFactionSlug } from "@/lib/faction-slug";
-import { notFound } from "next/navigation";
+import { publicImageUrl, researchImageRel } from "@/lib/public-image";
 
 type Params = { params: Promise<{ faction: string }> };
 type Props = Params & {
@@ -97,6 +98,7 @@ async function ResearchContent({ params, searchParams }: Props) {
           name: n.name,
           branch: n.branch,
           researchCost: n.researchCost,
+          imageUrl: publicImageUrl(researchImageRel(faction, n.slug)),
           units: n.units.map((u) => ({
             unitSlug: u.unitSlug,
             unitName: u.unitName,

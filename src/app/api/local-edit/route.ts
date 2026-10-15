@@ -9,9 +9,11 @@ import {
   setResearchParent,
 } from "@/lib/db/manual";
 import { editsOpen } from "@/lib/local-edit";
-import { isKnownFactionSlug } from "@/lib/faction-slug";
+import { compactUpload } from "@/lib/local-image";
+import { researchImageRel, unitImageRel, writePublicImage } from "@/lib/public-image";
 
 const MAX_BODY = 32_768;
+const MAX_FORM = 8 * 1024 * 1024 + 65_536;
 const SLUG = /^[a-z0-9][a-z0-9-]{0,79}$/;
 const STATS = new Set(["name", "cp", "cost", "speed", "reload", "penetration", "armor"]);
 
@@ -44,11 +46,55 @@ export async function GET() {
   return missing();
 }
 
+async function postForm(req: Request) {
+  const length = req.headers.get("content-length");
+  if (length !== null) {
+    const n = Number(length);
+    if (!Number.isFinite(n) || n < 0 || n > MAX_FORM) return fail(413, "Body too large");
+  }
+  let form: FormData;
+  try {
+    form = await req.formData();
+  } catch {
+    return fail(400, "Invalid form");
+  }
+  const kind = form.get("kind");
+  if (kind !== "unit" && kind !== "research") return fail(400, "Unknown edit");
+  const factionSlug = slug(form.get("factionSlug"));
+  if (!factionSlug) return fail(400, "Faction is required");
+  const name = form.get("name");
+  if (typeof name !== "string") return fail(400, "Name is required");
+  const image = form.get("image");
+  let bytes: Buffer | null = null;
+  if (image instanceof File && image.size > 0) {
+    const compacted = await compactUpload(image);
+    if ("error" in compacted) return fail(400, compacted.error);
+    bytes = compacted.bytes;
+  }
+  if (kind === "unit") {
+    const result = await createUnit(factionSlug, name);
+    if (!result.ok) return fail(result.status, result.error);
+    if (bytes) writePublicImage(unitImageRel(factionSlug, result.slug), bytes);
+    revalidateUnit(result.slug);
+    return Response.json({ ok: true, slug: result.slug });
+  }
+  const parentText = form.get("parentSlug");
+  const parentValue = typeof parentText === "string" ? parentText : "";
+  const parentSlug = parentValue ? slug(parentValue) : null;
+  if (parentValue && !parentSlug) return fail(400, "Invalid previous research");
+  const result = await createResearch(factionSlug, name, parentSlug);
+  if (!result.ok) return fail(result.status, result.error);
+  if (bytes) writePublicImage(researchImageRel(factionSlug, result.slug), bytes);
+  revalidateResearch(factionSlug);
+  return Response.json({ ok: true, slug: result.slug });
+}
+
 export async function POST(req: Request) {
   try {
     if (!(await editsOpen())) return missing();
-    const contentType = req.headers.get("content-type") || "";
-    if (!contentType.toLowerCase().startsWith("application/json")) {
+    const contentType = (req.headers.get("content-type") || "").toLowerCase();
+    if (contentType.startsWith("multipart/form-data")) return postForm(req);
+    if (!contentType.startsWith("application/json")) {
       return fail(400, "JSON required");
     }
     const length = req.headers.get("content-length");
@@ -69,7 +115,8 @@ export async function POST(req: Request) {
 
     if (body.kind === "faction") {
       if (typeof body.name !== "string") return fail(400, "Name is required");
-      const result = await createFaction(body.name);
+      if (typeof body.color !== "string") return fail(400, "Color is required");
+      const result = await createFaction(body.name, body.color);
       if (!result.ok) return fail(result.status, result.error);
       revalidateTag("factions", { expire: 0 });
       revalidateTag("home", { expire: 0 });
@@ -78,7 +125,7 @@ export async function POST(req: Request) {
 
     if (body.kind === "unit") {
       const factionSlug = slug(body.factionSlug);
-      if (!factionSlug || !isKnownFactionSlug(factionSlug)) return fail(400, "Faction is required");
+      if (!factionSlug) return fail(400, "Faction is required");
       if (typeof body.name !== "string") return fail(400, "Name is required");
       const result = await createUnit(factionSlug, body.name);
       if (!result.ok) return fail(result.status, result.error);
@@ -88,7 +135,7 @@ export async function POST(req: Request) {
 
     if (body.kind === "research") {
       const factionSlug = slug(body.factionSlug);
-      if (!factionSlug || !isKnownFactionSlug(factionSlug)) return fail(400, "Faction is required");
+      if (!factionSlug) return fail(400, "Faction is required");
       if (typeof body.name !== "string") return fail(400, "Name is required");
       const parentSlug = body.parentSlug == null || body.parentSlug === "" ? null : slug(body.parentSlug);
       if (body.parentSlug && !parentSlug) return fail(400, "Invalid previous research");

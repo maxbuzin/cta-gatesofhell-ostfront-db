@@ -35,6 +35,7 @@ import { ColorLegend } from "@/components/units/color-legend";
 import { Skeleton } from "@/components/ui/skeleton";
 import { withQueryFallback } from "@/lib/safe-query";
 import { safeCssColor } from "@/lib/safe-css-color";
+import { publicImageUrl, unitImageRel } from "@/lib/public-image";
 
 const unitSlugSchema = z
   .string()
@@ -134,14 +135,23 @@ async function UnitDetailContent({ params }: Props) {
       ["#c0443a", "#b89a55", "#3e6fa8", "#7a8b5c"][i % 4],
     ),
   }));
+  const picture = publicImageUrl(unitImageRel(unit.factionSlug, unit.slug));
 
   return (
     <div className="space-y-6">
       <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
-        <UnitSilhouette
-          className="rounded-md border border-border"
-          label={unit.name}
-        />
+        {picture ? (
+          <img
+            src={picture}
+            alt={unit.name}
+            className="aspect-video w-full rounded-md border border-border bg-muted/60 object-contain"
+          />
+        ) : (
+          <UnitSilhouette
+            className="rounded-md border border-border"
+            label={unit.name}
+          />
+        )}
         <div className="space-y-3">
           <h1 className="page-title">
             {editable ? (

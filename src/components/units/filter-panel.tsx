@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { FACTIONS, FACTION_COLORS } from "@/lib/factions";
+import { FACTION_COLORS } from "@/lib/factions";
 import { safeCssColor } from "@/lib/safe-css-color";
 
 const SPECIALTIES = [
@@ -152,20 +152,13 @@ export function FilterPanel({
     void setParams({ [key]: next, cursor: null });
   };
 
-  const factionOpts = (
-    factions.length > 0
-      ? factions.map((f) => ({
-          slug: f.slug,
-          nameEn:
-            FACTIONS.find((d) => d.slug === f.slug)?.nameEn || f.nameEn,
-          color: f.color,
-        }))
-      : FACTIONS.map((f) => ({
-          slug: f.slug,
-          nameEn: f.nameEn,
-          color: f.color,
-        }))
-  ).sort(byLabel((f) => f.nameEn));
+  const factionOpts = factions
+    .map((f) => ({
+      slug: f.slug,
+      nameEn: f.nameEn,
+      color: f.color,
+    }))
+    .sort(byLabel((f) => f.nameEn));
 
   const typeNames = new Map(TYPES.map((type) => [type.code, type.name]));
   const typeOpts = options.types
@@ -236,6 +229,7 @@ export function FilterPanel({
         />
       </div>
 
+      {factionOpts.length > 0 ? (
       <fieldset className="space-y-2">
         <legend className="text-sm font-medium">Faction</legend>
         {factionOpts.map((f) => (
@@ -257,6 +251,7 @@ export function FilterPanel({
           </label>
         ))}
       </fieldset>
+      ) : null}
 
       {typeOpts.length > 0 ? (
       <fieldset className="space-y-2">

@@ -1,10 +1,9 @@
 import "server-only";
 
 import { neon } from "@neondatabase/serverless";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { drizzle, type NeonHttpDatabase } from "drizzle-orm/neon-http";
 
-import { FACTIONS } from "@/lib/factions";
 import * as schema from "@/lib/db/schema";
 import {
   factions,
@@ -130,25 +129,34 @@ async function factionBySlug(db: Db, slug: string) {
   return row ?? null;
 }
 
-export async function createFaction(nameRaw: string): Promise<WriteResult> {
+const HEX = /^#[0-9A-Fa-f]{6}$/;
+
+export async function createFaction(nameRaw: string, colorRaw: string): Promise<WriteResult> {
   const db = getWriteDb();
   if (!db) return { ok: false, status: 503, error: "Write connection is not configured" };
   const name = cleanName(nameRaw);
-  const allowed = FACTIONS.find((faction) => faction.nameEn.toLowerCase() === name.toLowerCase());
-  if (!allowed) return { ok: false, status: 400, error: "Pick Germany, USSR, USA, or British Commonwealth" };
+  const slug = slugify(name);
+  const color = colorRaw.trim();
+  if (!name || !slug) return { ok: false, status: 400, error: "Name is required" };
+  if (!HEX.test(color)) return { ok: false, status: 400, error: "Color must be #RRGGBB" };
   const [existing] = await db
     .select({ id: factions.id })
     .from(factions)
-    .where(eq(factions.slug, allowed.slug))
+    .where(eq(factions.slug, slug))
     .limit(1);
   if (existing) return { ok: false, status: 409, error: "Faction already exists" };
+  const [last] = await db
+    .select({ sortOrder: factions.sortOrder })
+    .from(factions)
+    .orderBy(desc(factions.sortOrder))
+    .limit(1);
   await db.insert(factions).values({
-    slug: allowed.slug,
-    nameEn: allowed.nameEn,
-    color: allowed.color,
-    sortOrder: FACTIONS.findIndex((faction) => faction.slug === allowed.slug) + 1,
+    slug,
+    nameEn: name,
+    color,
+    sortOrder: (last?.sortOrder ?? 0) + 1,
   });
-  return { ok: true, slug: allowed.slug };
+  return { ok: true, slug };
 }
 
 export async function createUnit(factionSlug: string, nameRaw: string): Promise<WriteResult> {

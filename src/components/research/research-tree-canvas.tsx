@@ -34,6 +34,7 @@ export type ResearchNodeData = {
   name: string;
   branch: string | null;
   researchCost: number | null;
+  imageUrl: string | null;
   units: { unitSlug: string; unitName: string; period: string | null }[];
 };
 
@@ -410,6 +411,13 @@ export function ResearchTreeCanvas({
             <SheetTitle>{selected?.name ?? "Research"}</SheetTitle>
           </SheetHeader>
           <div className="mt-4 space-y-3 text-sm">
+            {selected?.imageUrl ? (
+              <img
+                src={selected.imageUrl}
+                alt={selected.name}
+                className="aspect-video w-full rounded-md border border-border object-contain"
+              />
+            ) : null}
             <p className="font-stat text-muted-foreground">
               Cost: {selected?.researchCost ?? "--"}
             </p>

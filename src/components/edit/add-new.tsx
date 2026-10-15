@@ -17,7 +17,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { FACTIONS } from "@/lib/factions";
+
+const DEFAULT_COLOR = "#5e6b73";
 
 type FactionOpt = { slug: string; nameEn: string };
 type ResearchOpt = { factionSlug: string; slug: string; name: string };
@@ -37,6 +38,8 @@ export function AddNew({
   const [parentSlug, setParentSlug] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [image, setImage] = useState<File | null>(null);
+  const [color, setColor] = useState(DEFAULT_COLOR);
   const parents = research.filter((node) => node.factionSlug === factionSlug);
 
   function open(next: Mode) {
@@ -44,6 +47,8 @@ export function AddNew({
     setName("");
     setFactionSlug(factions[0]?.slug ?? "");
     setParentSlug("");
+    setImage(null);
+    setColor(DEFAULT_COLOR);
     setError(null);
   }
 
@@ -58,18 +63,21 @@ export function AddNew({
     }
     setPending(true);
     setError(null);
-    const body =
-      mode === "faction"
-        ? { kind: "faction", name }
-        : mode === "unit"
-          ? { kind: "unit", factionSlug, name }
-          : { kind: "research", factionSlug, name, parentSlug: parentSlug || null };
+    const init: RequestInit = { method: "POST" };
+    if (mode === "faction") {
+      init.headers = { "content-type": "application/json" };
+      init.body = JSON.stringify({ kind: "faction", name, color });
+    } else if (mode) {
+      const form = new FormData();
+      form.set("kind", mode);
+      form.set("factionSlug", factionSlug);
+      form.set("name", name);
+      if (mode === "research") form.set("parentSlug", parentSlug);
+      if (image) form.set("image", image);
+      init.body = form;
+    }
     try {
-      const res = await fetch("/api/local-edit", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(body),
-      });
+      const res = await fetch("/api/local-edit", init);
       const payload = (await res.json().catch(() => null)) as { error?: string; slug?: string } | null;
       if (!res.ok) {
         setError(payload?.error || "Save failed");
@@ -115,22 +123,27 @@ export function AddNew({
             }}
           >
             {mode === "faction" ? (
+              <>
               <label className="block space-y-1 text-sm">
                 <span>Name</span>
-                <select
-                  className="h-9 w-full rounded-md border border-input bg-input/30 px-2"
+                <Input
                   value={name}
                   onChange={(event) => setName(event.target.value)}
                   required
-                >
-                  <option value="">Select</option>
-                  {FACTIONS.map((faction) => (
-                    <option key={faction.slug} value={faction.nameEn}>
-                      {faction.nameEn}
-                    </option>
-                  ))}
-                </select>
+                  maxLength={300}
+                />
               </label>
+              <label className="block space-y-1 text-sm">
+                <span>Color</span>
+                <input
+                  type="color"
+                  className="h-9 w-full rounded-md border border-input bg-input/30 px-1"
+                  value={color}
+                  onChange={(event) => setColor(event.target.value)}
+                  required
+                />
+              </label>
+              </>
             ) : (
               <>
                 <label className="block space-y-1 text-sm">
@@ -173,6 +186,18 @@ export function AddNew({
                     </option>
                   ))}
                 </select>
+              </label>
+            ) : null}
+            {mode === "unit" || mode === "research" ? (
+              <label className="block space-y-1 text-sm">
+                <span>Image</span>
+                <input
+                  key={mode}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="block w-full text-sm"
+                  onChange={(event) => setImage(event.target.files?.[0] ?? null)}
+                />
               </label>
             ) : null}
             {error ? <p className="text-sm text-destructive">{error}</p> : null}
