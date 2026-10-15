@@ -106,7 +106,7 @@ export default async function HomePage() {
   return (
     <div className="space-y-8">
       <FanNotice updated={newestUpdated(sources)} />
-      <section className="relative overflow-hidden rounded-md border border-border bg-surface px-4 py-8 md:px-10 md:py-10">
+      <section className="relative mx-auto max-w-4xl overflow-hidden rounded-md border border-border bg-surface px-4 py-8 md:px-10 md:py-10">
         <div className="relative z-10 mx-auto max-w-2xl space-y-5 text-center">
           <p className="font-display text-4xl tracking-wider text-foreground md:text-5xl">
             OSTFRONT DB

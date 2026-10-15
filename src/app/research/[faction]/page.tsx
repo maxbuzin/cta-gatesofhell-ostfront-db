@@ -1,13 +1,10 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { getFactions, getResearchTree, listResearchChoices } from "@/lib/db/queries/units";
+import { getFactions, getResearchTree, listResearchChoices, listResearchSections } from "@/lib/db/queries/units";
 import { editsOpen } from "@/lib/local-edit";
-import { AddNew } from "@/components/edit/add-new";
 import { FACTIONS } from "@/lib/factions";
-import { cn } from "@/lib/utils";
-import { ResearchTreeClient } from "@/components/research/research-tree-client";
+import { ResearchBoard } from "@/components/research/research-board";
 import { Skeleton } from "@/components/ui/skeleton";
 import { withQueryFallback } from "@/lib/safe-query";
 import { isKnownFactionSlug } from "@/lib/faction-slug";
@@ -40,9 +37,9 @@ async function ResearchContent({ params, searchParams }: Props) {
   const { faction } = await params;
   const highlightSlug = oneUnit((await searchParams).unit);
   if (!isKnownFactionSlug(faction)) notFound();
-  const emptyTree = { nodes: [], edges: [], faction: null };
+  const emptyTree = { nodes: [], edges: [], sections: [], faction: null };
   const editable = await editsOpen();
-  const [factions, tree, research] = await Promise.all([
+  const [factions, tree, research, sectionRows] = await Promise.all([
     withQueryFallback(() => getFactions(), [], "Failed to load factions"),
     withQueryFallback(
       () => getResearchTree(faction),
@@ -52,65 +49,39 @@ async function ResearchContent({ params, searchParams }: Props) {
     editable
       ? withQueryFallback(() => listResearchChoices(), [], "Failed to load research")
       : Promise.resolve([]),
+    editable
+      ? withQueryFallback(() => listResearchSections(), [], "Failed to load sections")
+      : Promise.resolve([]),
   ]);
 
-  const tabs =
-    factions.length > 0
-      ? factions.map((f) => ({
-          slug: f.slug,
-          nameEn:
-            FACTIONS.find((d) => d.slug === f.slug)?.nameEn || f.nameEn,
-          color: f.color,
-        }))
-      : FACTIONS;
-
   return (
-    <div className="space-y-4">
-      <div className="flex items-start justify-between gap-3">
-        <h1 className="page-title">Research Tree</h1>
-        {editable ? (
-          <AddNew
-            factions={factions.map((row) => ({ slug: row.slug, nameEn: row.nameEn }))}
-            research={research}
-          />
-        ) : null}
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {tabs.map((f) => (
-          <Link
-            key={f.slug}
-            href={`/research/${f.slug}`}
-            className={cn(
-              "rounded-md border px-3 py-1.5 text-sm transition-colors",
-              f.slug === faction
-                ? "border-brass bg-brass/10"
-                : "border-border hover:border-primary/50",
-            )}
-          >
-            {f.nameEn}
-          </Link>
-        ))}
-      </div>
-      <ResearchTreeClient
-        nodes={tree.nodes.map((n) => ({
-          id: n.id,
-          slug: n.slug,
-          name: n.name,
-          branch: n.branch,
-          researchCost: n.researchCost,
-          imageUrl: publicImageUrl(researchImageRel(faction, n.slug)),
-          units: n.units.map((u) => ({
-            unitSlug: u.unitSlug,
-            unitName: u.unitName,
-            period: u.period,
-          })),
-        }))}
-        edges={tree.edges}
-        highlightSlug={highlightSlug}
-        factionSlug={faction}
-        editable={editable}
-      />
-    </div>
+    <ResearchBoard
+      editable={editable}
+      factions={factions.map((row) => ({ slug: row.slug, nameEn: row.nameEn }))}
+      research={research}
+      sections={sectionRows}
+      highlightSlug={highlightSlug}
+      factionSlug={faction}
+      nodes={tree.nodes.map((n) => ({
+        id: n.id,
+        slug: n.slug,
+        name: n.name,
+        branch: n.branch,
+        researchCost: n.researchCost,
+        sectionId: n.sectionId,
+        column: n.column,
+        row: n.row,
+        sortOrder: n.sortOrder,
+        imageUrl: publicImageUrl(researchImageRel(faction, n.slug)),
+        units: n.units.map((u) => ({
+          unitSlug: u.unitSlug,
+          unitName: u.unitName,
+          period: u.period,
+        })),
+      }))}
+      edges={tree.edges}
+      treeSections={tree.sections}
+    />
   );
 }
 

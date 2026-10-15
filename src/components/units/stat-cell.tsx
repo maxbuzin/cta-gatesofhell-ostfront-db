@@ -21,8 +21,6 @@ import {
   type StatGroup,
 } from "@/lib/stats/definitions";
 import { formatStat } from "@/lib/safe";
-import { InlineEdit } from "@/components/edit/inline-edit";
-import type { StatField } from "@/lib/local-edit-guard";
 import {
   Tooltip,
   TooltipContent,
@@ -57,7 +55,6 @@ export function StatCell({
   max = 100,
   className,
   best,
-  edit = null,
 }: {
   value: number | string | null | undefined;
   label: string;
@@ -69,7 +66,6 @@ export function StatCell({
   max?: number;
   className?: string;
   best?: boolean;
-  edit?: { slug: string; field: StatField } | null;
 }) {
   const num = typeof value === "number" ? value : null;
   let intensity = 0.35;
@@ -85,7 +81,7 @@ export function StatCell({
       <TooltipTrigger asChild>
         <span
           className={cn(
-            "inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-stat text-sm tabular-nums",
+            "inline-flex w-fit justify-self-start items-center gap-1 rounded px-1.5 py-0.5 font-stat text-sm tabular-nums",
             best && "ring-1 ring-brass",
             className,
           )}
@@ -93,17 +89,7 @@ export function StatCell({
         >
           {Icon ? <Icon className="size-3.5 opacity-70" aria-hidden /> : null}
           <span>
-            {edit ? (
-              <InlineEdit
-                label={label}
-                kind="number"
-                value={num}
-                display={display}
-                save={{ kind: "stat", slug: edit.slug, field: edit.field }}
-              />
-            ) : (
-              display
-            )}
+            {display}
             {display !== "--" && unit ? (
               <span className="ml-0.5 text-xs text-muted-foreground">{unit}</span>
             ) : null}

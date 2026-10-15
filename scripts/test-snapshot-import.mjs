@@ -210,6 +210,53 @@ describe("mapSnapshot", () => {
     assert.equal(mapped.records[0].costs.find((cost) => cost.kind === "cp").amount, 2);
   });
 
+  it("keeps rifle squad soldiers and skips kit", () => {
+    const mapped = mapSnapshot({
+      units: [
+        {
+          id: "squad_rifle_test",
+          name: "(2) Rifle squad",
+          roster: "conquest",
+          side: "ger",
+          period: "mid",
+          members: [
+            {
+              breed: "sl",
+              count: 1,
+              items: [
+                { id: "bandage_ger", count: 2 },
+                { id: "k98", count: 1 },
+              ],
+            },
+            {
+              breed: "rifleman_1",
+              count: 7,
+              items: [{ id: "k98", count: 1 }],
+            },
+            {
+              breed: "mg",
+              count: 1,
+              items: [
+                { id: "bandage_ger", count: 1 },
+                { id: "mg34", count: 1 },
+              ],
+            },
+          ],
+          weapons: [
+            { id: "k98", name: "Karabiner 98k", calibre: 7.92, rpm: 50, range: 120 },
+            { id: "bandage_ger", name: "German Bandage" },
+            { id: "mg34", name: "MG 34", calibre: 7.92, rpm: 800, range: 120 },
+          ],
+        },
+      ],
+    });
+    assert.deepEqual(mapped.records[0].stats.extra.members, [
+      { role: "SL", count: 1, weapon: "Karabiner 98k", caliberMm: 7.92, rpm: 50, rangeM: 120 },
+      { role: "Rifleman 1", count: 7, weapon: "Karabiner 98k", caliberMm: 7.92, rpm: 50, rangeM: 120 },
+      { role: "MG", count: 1, weapon: "MG 34", caliberMm: 7.92, rpm: 800, rangeM: 120 },
+    ]);
+  });
+
   it("names a stub from a unit with no research", () => {
     const mapped = mapSnapshot({
       units: [

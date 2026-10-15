@@ -42,11 +42,13 @@ import {
   researchNodes,
   researchNodeUnits,
   researchEdges,
+  researchSections,
   gameVersions,
   popularComparisons,
   sources,
 } from "@/lib/db/schema";
 import { escapeLike } from "@/lib/safe";
+import { readMembers } from "@/lib/unit-facts";
 
 export type UnitListFilters = {
   q?: string;
@@ -138,6 +140,24 @@ export async function getUnitCountsByType(): Promise<
     .from(unitTypes)
     .leftJoin(units, eq(units.unitTypeId, unitTypes.id))
     .groupBy(unitTypes.id)
+    .orderBy(asc(unitTypes.nameEn));
+}
+
+export async function getUnitTypes(): Promise<
+  { code: string; name: string; category: "infantry" | "vehicle" | "gun" | "emplacement" }[]
+> {
+  "use cache";
+  cacheLife("max");
+  cacheTag("units");
+  const db = getDb();
+  if (!db) return [];
+  return await db
+    .select({
+      code: unitTypes.code,
+      name: unitTypes.nameEn,
+      category: unitTypes.category,
+    })
+    .from(unitTypes)
     .orderBy(asc(unitTypes.nameEn));
 }
 
@@ -691,6 +711,7 @@ export async function getUnitBySlug(slug: string) {
             slug: weapons.slug,
             name: weapons.name,
             caliberMm: weapons.caliberMm,
+            rateOfFireRpm: weapons.rateOfFireRpm,
             reloadS: weapons.reloadS,
             maxRangeM: weapons.maxRangeM,
             mount: unitWeapons.mount,
@@ -745,6 +766,7 @@ export async function getUnitBySlug(slug: string) {
   return {
     ...row,
     stats: stats[0] ?? null,
+    members: readMembers(stats[0]?.extra),
     costs,
     specialties: specs,
     weapons: weaponsRows.map((w) => ({
@@ -807,9 +829,9 @@ export async function getResearchTree(factionSlug: string) {
   cacheLife("max");
   cacheTag("research", `research:${factionSlug}`);
   const db = getDb();
-  if (!db) return { nodes: [], edges: [], faction: null };
+  if (!db) return { nodes: [], edges: [], sections: [], faction: null };
   const faction = await getFactionBySlug(factionSlug);
-  if (!faction) return { nodes: [], edges: [], faction: null };
+  if (!faction) return { nodes: [], edges: [], sections: [], faction: null };
 
   const versionId = await currentVersionId();
   const nodes =
@@ -824,6 +846,23 @@ export async function getResearchTree(factionSlug: string) {
               eq(researchNodes.gameVersionId, versionId),
             ),
           );
+  const sections =
+    versionId === null
+      ? []
+      : await db
+          .select({
+            id: researchSections.id,
+            name: researchSections.name,
+            sortOrder: researchSections.sortOrder,
+          })
+          .from(researchSections)
+          .where(
+            and(
+              eq(researchSections.factionId, faction.id),
+              eq(researchSections.gameVersionId, versionId),
+            ),
+          )
+          .orderBy(asc(researchSections.sortOrder), asc(researchSections.id));
 
   const nodeIds = nodes.map((n) => n.id);
   const edges =
@@ -850,6 +889,7 @@ export async function getResearchTree(factionSlug: string) {
 
   return {
     faction,
+    sections,
     nodes: nodes.map((n) => ({
       ...n,
       units: nodeUnits
@@ -879,6 +919,27 @@ export async function getFactionUnitCounts(factionId: number) {
     .orderBy(asc(unitTypes.nameEn));
 }
 
+export async function listResearchSections() {
+  "use cache";
+  cacheLife("max");
+  cacheTag("research");
+  const db = getDb();
+  if (!db) return [];
+  const versionId = await currentVersionId();
+  if (versionId === null) return [];
+  return await db
+    .select({
+      id: researchSections.id,
+      name: researchSections.name,
+      sortOrder: researchSections.sortOrder,
+      factionSlug: factions.slug,
+    })
+    .from(researchSections)
+    .innerJoin(factions, eq(researchSections.factionId, factions.id))
+    .where(eq(researchSections.gameVersionId, versionId))
+    .orderBy(asc(factions.sortOrder), asc(researchSections.sortOrder), asc(researchSections.id));
+}
+
 export async function listResearchChoices() {
   "use cache";
   cacheLife("max");
@@ -890,6 +951,8 @@ export async function listResearchChoices() {
       slug: researchNodes.slug,
       name: researchNodes.name,
       factionSlug: factions.slug,
+      sectionId: researchNodes.sectionId,
+      sortOrder: researchNodes.sortOrder,
     })
     .from(researchNodes)
     .innerJoin(factions, eq(researchNodes.factionId, factions.id))
@@ -944,6 +1007,7 @@ export async function getUnitUnlock(slug: string) {
   walk(hit.id);
   return {
     name: hit.name,
+    researchSlug: hit.slug,
     researchCost: hit.researchCost,
     steps: order.flatMap((id) => {
       const step = byId.get(id);

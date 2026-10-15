@@ -332,6 +332,60 @@ function headcount(members) {
   return small(n);
 }
 
+function roleLabel(breed) {
+  const parts = String(breed || "")
+    .trim()
+    .split(/[_\s]+/)
+    .filter(Boolean);
+  if (!parts.length) return "";
+  return parts
+    .map((part) => {
+      if (/^\d/.test(part)) return part;
+      if (part.length <= 2) return part.toUpperCase();
+      return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
+    })
+    .join(" ")
+    .slice(0, 40);
+}
+
+function combatWeapon(weapon) {
+  if (!weapon) return null;
+  const caliberMm = dec(weapon.calibre, 2, 9999.99);
+  const rpm = dec(weapon.rpm, 2, 99999.99);
+  const rangeM = whole(weapon.range);
+  if (caliberMm == null && rpm == null && rangeM == null) return null;
+  const name = String(weapon.name || weapon.id || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 80);
+  if (!name) return null;
+  return { weapon: name, caliberMm, rpm, rangeM };
+}
+
+function rosterOf(unit) {
+  const members = Array.isArray(unit.members) ? unit.members : [];
+  const byId = new Map();
+  for (const weapon of Array.isArray(unit.weapons) ? unit.weapons : []) {
+    const id = String(weapon?.id || "").trim();
+    if (id && !byId.has(id)) byId.set(id, weapon);
+  }
+  const rows = [];
+  for (const member of members) {
+    const count = small(member?.count);
+    const role = roleLabel(member?.breed);
+    if (!count || !role) continue;
+    let picked = null;
+    for (const item of Array.isArray(member.items) ? member.items : []) {
+      picked = combatWeapon(byId.get(String(item?.id || "").trim()));
+      if (picked) break;
+    }
+    if (!picked) continue;
+    rows.push({ role, count, ...picked });
+    if (rows.length >= 24) break;
+  }
+  return rows;
+}
+
 function extraOf(unit) {
   const extra = {};
   if (unit.id) extra.gameId = String(unit.id).slice(0, 200);
@@ -341,6 +395,8 @@ function extraOf(unit) {
   const maxStage = small(unit.maxStage);
   if (minStage != null) extra.minStage = minStage;
   if (maxStage != null) extra.maxStage = maxStage;
+  const members = rosterOf(unit);
+  if (members.length) extra.members = members;
   return Object.keys(extra).length ? extra : null;
 }
 

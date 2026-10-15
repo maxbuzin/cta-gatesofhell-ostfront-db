@@ -6,10 +6,8 @@ import { cn } from "@/lib/utils";
 import { Providers } from "@/components/providers";
 import { TopBar } from "@/components/layout/top-bar";
 import { ChromeBar } from "@/components/layout/chrome-bar";
-import {
-  DesktopSidebar,
-  desktopRailClass,
-} from "@/components/layout/desktop-sidebar";
+import { DesktopSidebar, desktopRailClass } from "@/components/layout/desktop-sidebar";
+import { RailToggle } from "@/components/layout/rail-toggle";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { CompareTray } from "@/components/compare/compare-tray";
 import { RightRailOffset } from "@/components/layout/right-rail-offset";
@@ -57,20 +55,37 @@ export const metadata: Metadata = {
   ),
 };
 
-export default async function RootLayout({
+async function SearchBar() {
+  const searchIndex = await withQueryFallback(
+    () => getSearchIndex(),
+    [],
+    "Failed to load search index",
+  );
+  return <TopBar searchIndex={searchIndex} />;
+}
+
+async function VersionFooter() {
+  const gameVersion = await withQueryFallback(
+    () => getCurrentGameVersion(),
+    null,
+    "Failed to load game version",
+  );
+  return <SiteFooter gameVersion={gameVersion?.code ?? null} />;
+}
+
+function SearchBarFallback() {
+  return (
+    <header className="relative z-40 border-b border-border bg-background pt-[env(safe-area-inset-top)]">
+      <div className="h-14" />
+    </header>
+  );
+}
+
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [searchIndex, gameVersion] = await Promise.all([
-    withQueryFallback(() => getSearchIndex(), [], "Failed to load search index"),
-    withQueryFallback(
-      () => getCurrentGameVersion(),
-      null,
-      "Failed to load game version",
-    ),
-  ]);
-
   return (
     <html
       lang="en"
@@ -81,7 +96,7 @@ export default async function RootLayout({
       )}
     >
       <body>
-        <style>{`@media (min-width: 48rem) { :root { --rail-left: 14rem; --shell-x: 1.5rem } }`}</style>
+        <style>{`@media (min-width: 48rem) { :root { --rail-left: 14rem; --shell-x: 1.5rem; --rail-border: 1px } }`}</style>
         <a
           href="#main"
           className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-background focus:p-2"
@@ -91,8 +106,8 @@ export default async function RootLayout({
         <RightRailOffset />
         <Providers>
           <ChromeBar>
-            <Suspense fallback={null}>
-              <TopBar searchIndex={searchIndex} />
+            <Suspense fallback={<SearchBarFallback />}>
+              <SearchBar />
             </Suspense>
           </ChromeBar>
           <div className="flex min-h-dvh flex-col pt-[var(--chrome-h)] pr-[var(--rail-right)] pb-[var(--tray-h,0px)] pl-[var(--rail-left)]">
@@ -100,8 +115,17 @@ export default async function RootLayout({
               <DesktopSidebar />
             </Suspense>
             <main id="main" className="flex flex-1 flex-col">
-              <div className="flex-1 px-[var(--shell-x)] py-6">{children}</div>
-              <SiteFooter gameVersion={gameVersion?.code ?? null} />
+              <div className="flex items-center gap-3 px-[var(--shell-x)] pt-4 pb-6">
+                <RailToggle />
+                <div
+                  id="content-crumbs"
+                  className="flex min-w-0 flex-1 items-center gap-3"
+                />
+              </div>
+              <div className="flex-1 px-[var(--shell-x)] pb-6">{children}</div>
+              <Suspense fallback={<SiteFooter gameVersion={null} />}>
+                <VersionFooter />
+              </Suspense>
             </main>
           </div>
           <CompareTray />

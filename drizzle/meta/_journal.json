@@ -22,6 +22,20 @@
       "when": 1791700813341,
       "tag": "0002_slug_checks",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792012000000,
+      "tag": "0003_research_sections",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792020000000,
+      "tag": "0004_research_edge_routes",
+      "breakpoints": true
     }
   ]
 }

@@ -331,6 +331,9 @@ async function writeResearch(db, mapped, ctx, unitIds) {
   await db
     .delete(schema.researchNodes)
     .where(eq(schema.researchNodes.gameVersionId, ctx.versionId));
+  await db
+    .delete(schema.researchSections)
+    .where(eq(schema.researchSections.gameVersionId, ctx.versionId));
   const nodeIds = new Map();
   for (const node of mapped.research) {
     const factionId = ctx.factionIds.get(node.factionSlug);

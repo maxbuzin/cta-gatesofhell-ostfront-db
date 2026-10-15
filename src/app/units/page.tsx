@@ -9,6 +9,7 @@ import {
   getBrowseFilters,
   getFactions,
   listResearchChoices,
+  listResearchSections,
   listUnits,
 } from "@/lib/db/queries/units";
 import { editsOpen } from "@/lib/local-edit";
@@ -47,7 +48,7 @@ async function UnitsContent({
     },
   };
   const editable = await editsOpen();
-  const [factions, result, research, browseFilters] = await Promise.all([
+  const [factions, result, research, sectionRows, browseFilters] = await Promise.all([
     withQueryFallback(() => getFactions(), [], "Failed to load factions"),
     withQueryFallback(
       () => listUnits(filters),
@@ -56,6 +57,9 @@ async function UnitsContent({
     ),
     editable
       ? withQueryFallback(() => listResearchChoices(), [], "Failed to load research")
+      : Promise.resolve([]),
+    editable
+      ? withQueryFallback(() => listResearchSections(), [], "Failed to load sections")
       : Promise.resolve([]),
     withQueryFallback(() => getBrowseFilters(), emptyFilters, "Failed to load filters"),
   ]);
@@ -70,6 +74,8 @@ async function UnitsContent({
           <AddNew
             factions={factions.map((row) => ({ slug: row.slug, nameEn: row.nameEn }))}
             research={research}
+            sections={sectionRows}
+            kinds={["unit", "faction"]}
           />
         ) : null
       }

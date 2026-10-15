@@ -38,7 +38,7 @@ export function UnitsView({
         {total} unit{total === 1 ? "" : "s"}
         {total > pageSize ? ` · showing ${rows.length}` : ""}
       </p>
-      <div className="grid w-full min-w-0 grid-cols-1 gap-5 lg:grid-cols-2">
+      <div className="grid w-full min-w-0 grid-cols-1 gap-5">
         {rows.map((unit) => (
           <UnitCard key={unit.slug} unit={unit} />
         ))}

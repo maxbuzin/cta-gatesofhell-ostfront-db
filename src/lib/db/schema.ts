@@ -1,4 +1,5 @@
 import { sql } from "drizzle-orm";
+import type { ResearchRoute } from "@/lib/research-route";
 import {
   type AnyPgColumn,
   boolean,
@@ -16,6 +17,15 @@ import {
   timestamp,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
+
+export type SquadMemberStat = {
+  role: string;
+  count: number;
+  weapon: string;
+  caliberMm: number | null;
+  rpm: number | null;
+  rangeM: number | null;
+};
 
 export const unitCategory = pgEnum("unit_category", [
   "infantry",
@@ -282,7 +292,10 @@ export const unitStats = pgTable(
     mgs: smallint(),
     atWeapons: smallint("at_weapons"),
     sniperRifles: smallint("sniper_rifles"),
-    extra: jsonb().$type<Record<string, number | string>>(),
+    extra: jsonb().$type<{
+      members?: SquadMemberStat[];
+      [key: string]: number | string | SquadMemberStat[] | undefined;
+    }>(),
   },
   (t) => [
     uniqueIndex("unit_stats_unit_version_uq").on(t.unitId, t.gameVersionId),
@@ -474,6 +487,28 @@ export const unitSpecialties = pgTable(
   ],
 );
 
+export const researchSections = pgTable(
+  "research_sections",
+  {
+    id: integer().primaryKey().generatedAlwaysAsIdentity(),
+    factionId: integer("faction_id")
+      .notNull()
+      .references(() => factions.id),
+    gameVersionId: integer("game_version_id")
+      .notNull()
+      .references(() => gameVersions.id),
+    name: text(),
+    sortOrder: integer("sort_order").notNull(),
+  },
+  (t) => [
+    index("research_sections_faction_idx").on(
+      t.factionId,
+      t.gameVersionId,
+      t.sortOrder,
+    ),
+  ],
+);
+
 export const researchNodes = pgTable(
   "research_nodes",
   {
@@ -492,6 +527,10 @@ export const researchNodes = pgTable(
     row: smallint(),
     researchCost: integer("research_cost"),
     sourceId: integer("source_id").references(() => sources.id),
+    sectionId: integer("section_id").references(() => researchSections.id, {
+      onDelete: "set null",
+    }),
+    sortOrder: integer("sort_order").notNull().default(0),
   },
   (t) => [
     uniqueIndex("research_nodes_uq").on(
@@ -499,6 +538,7 @@ export const researchNodes = pgTable(
       t.gameVersionId,
       t.slug,
     ),
+    index("research_nodes_section_idx").on(t.sectionId, t.sortOrder),
     check("research_nodes_slug_format", sql`${t.slug} ~ '^[a-z0-9][a-z0-9-]{0,79}$'`),
   ],
 );
@@ -513,6 +553,7 @@ export const researchEdges = pgTable(
       .notNull()
       .references(() => researchNodes.id, { onDelete: "cascade" }),
     kind: text().notNull().default("requires"),
+    route: jsonb().$type<ResearchRoute>(),
   },
   (t) => [
     primaryKey({ columns: [t.fromNodeId, t.toNodeId] }),
