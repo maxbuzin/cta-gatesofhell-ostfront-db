@@ -59,7 +59,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "4.3.3",
     "@tailwindcss/turbopack": "4.3.3",
-    "@types/node": "^24.5.2",
+    "@types/node": "^26.6.5",
     "@types/react": "^19.1.13",
     "@types/react-dom": "^19.1.9",
     "babel-plugin-react-compiler": "1.0.0",
@@ -70,6 +70,6 @@
     "postcss": "^8.5.29",
     "shadcn": "4.21.4",
     "tailwindcss": "4.3.3",
-    "typescript": "^5.9.2"
+    "typescript": "^7.0.2"
   }
 }
